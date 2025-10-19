@@ -33,7 +33,6 @@ fi
 
 # Check if the database is empty
 if [ $(mariadb -u $MARIADB_USER -p$MARIADB_PASSWORD -h $MARIADB_HOSTNAME -P $MARIADB_PORT -D $MARIADB_DATABASE -sse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$MARIADB_DATABASE';") -eq 0 ]; then
-
     echo "Empty database, migrating..."
 
     # Get the latest migration revision
