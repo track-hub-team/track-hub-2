@@ -11,7 +11,7 @@ class BaseRepository(Generic[T]):
         self.session = app.db.session
 
     def create(self, commit: bool = True, **kwargs) -> T:
-        instance: T = self.model(**kwargs)
+        instance: T = self.model(**kwargs)  # type: ignore
         self.session.add(instance)
         if commit:
             self.session.commit()
@@ -20,7 +20,7 @@ class BaseRepository(Generic[T]):
         return instance
 
     def get_by_id(self, id: int) -> Optional[T]:
-        instance: Optional[T] = self.model.query.get(id)
+        instance: Optional[T] = self.model.query.get(id)  # type: ignore
         return instance
 
     def get_by_column(self, column_name: str, value) -> List[T]:
@@ -28,7 +28,7 @@ class BaseRepository(Generic[T]):
         return instances
 
     def get_or_404(self, id: int) -> Union[T, NoReturn]:
-        return self.model.query.get_or_404(id)
+        return self.model.query.get_or_404(id)  # type: ignore
 
     def update(self, id: int, **kwargs) -> Optional[T]:
         instance: Optional[T] = self.get_by_id(id)
@@ -58,4 +58,4 @@ class BaseRepository(Generic[T]):
         return True
 
     def count(self) -> int:
-        return self.model.query.count()
+        return self.model.query.count()  # type: ignore

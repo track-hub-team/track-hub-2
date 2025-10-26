@@ -95,7 +95,7 @@ class ZenodoService(BaseService):
         deposition_id = response.json()["id"]
 
         # Step 2: Upload an empty file to the deposition
-        data = {"name": "test_file.txt"}
+        data: dict = {"name": "test_file.txt"}  # type: ignore
         files = {"file": open(file_path, "rb")}
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
         response = requests.post(publish_url, params=self.params, data=data, files=files)
@@ -106,7 +106,7 @@ class ZenodoService(BaseService):
         logger.info(f"Data: {data}")
         logger.info(f"Files: {files}")
         logger.info(f"Response Status Code: {response.status_code}")
-        logger.info(f"Response Content: {response.content}")
+        logger.info(f"Response Content: {response.content!r}")
 
         if response.status_code != 201:
             messages.append(f"Failed to upload test file to Zenodo. Response code: {response.status_code}")

@@ -9,7 +9,7 @@ name: Deploy on Webhook
 on:
   workflow_run:
     # Trigger this workflow only after "Pytest" completes
-    workflows: 
+    workflows:
       - "Pytest"
     types:
       - completed
