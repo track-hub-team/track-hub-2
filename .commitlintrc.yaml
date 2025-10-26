@@ -1,0 +1,66 @@
+extends:
+  - '@commitlint/config-conventional'
+
+parserPreset:
+  parserOpts:
+    # Reconocer referencias de Jira
+    issuePrefixes: ['SCRUM-', '#']
+
+rules:
+  # Tipos permitidos
+  type-enum:
+    - 2           # Severidad 2 -> produce error si no pasa
+    - always
+    - - feat      # Nueva funcionalidad
+      - fix       # Corrección de bug
+      - docs      # Cambios en documentación
+      - style     # Cambios de formato (no afectan código)
+      - refactor  # Refactorización de código
+      - test      # Añadir o modificar tests
+      - chore     # Tareas de mantenimiento
+
+  # El tipo es obligatorio y en minúsculas
+  type-case:
+    - 2
+    - always
+    - lower-case
+
+  # El subject es obligatorio
+  subject-empty:
+    - 2
+    - never
+
+  # El subject no debe terminar con punto
+  subject-full-stop:
+    - 2
+    - never
+    - '.'
+
+  # El subject debe empezar con minúscula
+  subject-case:
+    - 2
+    - always
+    - lower-case
+
+  # Longitud máxima del header (type + scope + subject)
+  header-max-length:
+    - 2
+    - always
+    - 100
+
+  # El body debe tener una línea en blanco después del header
+  body-leading-blank:
+    - 1
+    - always
+
+  # El footer debe tener una línea en blanco antes
+  footer-leading-blank:
+    - 1
+    - always
+
+  # El footer debe contener una referencia a un issue
+  footer-max-line-length:
+    - 0
+  references-empty:
+    - 2
+    - never

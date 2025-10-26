@@ -1,0 +1,112 @@
+repos:
+  # Hooks básicos propios de pre-commit
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        description: Remove trailing whitespace at end of line
+      - id: end-of-file-fixer
+        name: Fix End of Files
+        description: Ensure files end with a newline
+      - id: check-yaml
+        name: Check YAML
+        description: Validate YAML files
+      - id: check-added-large-files
+        name: Check for Large Files
+        description: Prevent large files from being committed
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+        name: Check for Merge Conflicts
+        description: Check for files that contain merge conflict strings
+      - id: no-commit-to-branch
+        name: Protect main and trunk branches
+        description: Prevent direct commits to main and trunk (merges are allowed)
+        args: ['--branch', 'main', '--branch', 'trunk']
+        stages: [commit]  # Solo en commit, para que no de problemas con los push tras merge
+  # Black - formateo de código Python
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        name: Black Code Formatter
+        description: Format Python code with Black
+        language_version: python3.12
+        args: ['--line-length=120']  # Según pyproject.toml
+        files: ^(app|rosemary)/.*\.py$  # Solo archivos en app/ y rosemary/
+  # isort - ordenar imports
+  - repo: https://github.com/PyCQA/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        name: isort Import Sorter
+        description: Sort Python imports
+        args: ['--profile=black', '--line-length=120']
+        files: ^(app|rosemary)/.*\.py$
+
+  # Flake8 - linting (validación sin auto-fix)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: Flake8 Linter
+        description: Check Python code style
+        args: ['--max-line-length=120', '--extend-ignore=E203,W503', '--show-source', '--statistics']
+        files: ^(app|rosemary)/.*\.py$
+        verbose: true
+
+  # mypy - type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        name: mypy Type Checker
+        description: Static type checking for Python
+        args: ['--ignore-missing-imports', '--no-strict-optional', '--show-error-codes', '--pretty']
+        files: ^(app|rosemary)/.*\.py$
+        verbose: true
+        additional_dependencies:
+          - types-requests
+          - types-python-dateutil
+          - types-PyYAML
+          - types-redis
+          - sqlalchemy[mypy]
+
+  # commitlint - validación de mensajes de commit (Conventional Commits)
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.16.0
+    hooks:
+      - id: commitlint
+        name: Commitlint
+        description: Validate commit messages follow Conventional Commits
+        stages: [commit-msg]
+        additional_dependencies: ['@commitlint/config-conventional']
+
+  # Validación de nombre de rama según EGC Flow (valida antes de push)
+  - repo: local
+    hooks:
+      - id: check-branch-name
+        name: Branch Name Validation (EGC Flow)
+        description: Ensure branch follows EGC Flow naming convention
+        entry: bash -c
+        args:
+          - -c
+          - |
+            branch=$(git rev-parse --abbrev-ref HEAD)
+            if [[ ! "$branch" =~ ^(main|trunk|feature/[a-zA-Z0-9._-]+|bugfix/[a-zA-Z0-9._-]+|hotfix/[a-zA-Z0-9._-]+)$ ]]; then
+              echo "❌ Branch \"$branch\" does not follow EGC Flow."
+              echo ""
+              echo "Valid formats:"
+              echo "  • main (releases only)"
+              echo "  • trunk (integration branch)"
+              echo "  • feature/<task> (new features)"
+              echo "  • bugfix/<task> (bug fixes from trunk)"
+              echo "  • hotfix/<task> (urgent production fixes)"
+              echo ""
+              echo "Example: feature/upload-github or bugfix/dataset-validation"
+              exit 1
+            fi
+        language: system
+        stages: [pre-push]
+        always_run: true
+        pass_filenames: false
