@@ -1,20 +1,25 @@
 # ----------------------------------------------------------------------------
-# Run Tests Workflow
-# This workflow runs pytest on every push and pull request (targeting main).
-# It sets up a MariaDB service container and configures environment
-# variables for both the service and the test environment.
+# Stage 3: Testing Workflow
+# This workflow runs the complete test suite with coverage analysis.
+#
+# Features:
+# - Runs all pytest tests (excluding Selenium)
+# - Generates coverage report
+# - Enforces minimum 50% coverage threshold
+# - Uploads coverage to Codecov
+# - Generates test summary report
 # ----------------------------------------------------------------------------
 
-name: Pytest
+name: Stage 3 - Testing
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - '**'
 
 jobs:
-  pytest:
+  test:
+    name: Run Tests with Coverage
     runs-on: ubuntu-24.04
 
     # Global environment variables shared across services and steps
@@ -27,6 +32,7 @@ jobs:
       MARIADB_HOSTNAME: 127.0.0.1
       MARIADB_PORT: 3306
       FLASK_ENV: testing
+      WORKING_DIR: ""
 
     services:
       # MariaDB service container for integration tests
@@ -67,6 +73,65 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 5: Run the pytest test suite (ignoring Selenium tests)
-      - name: Run Tests
-        run: pytest app/modules/ --ignore-glob='*selenium*'
+      # Step 5a: Run tests only (feature branches)
+      - name: Run tests (feature branches)
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/trunk'
+        run: |
+          pytest app/modules/ \
+            --ignore-glob='*selenium*' \
+            -v
+
+      # Step 5b: Run tests with coverage (trunk and main - complete analysis)
+      - name: Run tests with coverage (trunk/main)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        run: |
+          pytest app/modules/ \
+            --ignore-glob='*selenium*' \
+            --cov=app \
+            --cov=rosemary \
+            --cov=core \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --cov-fail-under=50 \
+            --junitxml=pytest-report.xml \
+            -v
+
+      # Step 6: Generate coverage summary (only for trunk/main)
+      - name: Coverage Summary
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+
+      # Step 7: Upload coverage to Codecov (only for trunk/main)
+      - name: Upload coverage to Codecov
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      # Step 8: Upload coverage reports as artifacts (only for trunk/main)
+      - name: Upload coverage reports
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            htmlcov/
+            pytest-report.xml
+          retention-days: 30
+
+      # Step 9: Publish test results (only for trunk/main)
+      - name: Publish test results
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: pytest-report.xml
+          check_name: Test Results
