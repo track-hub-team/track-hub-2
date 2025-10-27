@@ -1,0 +1,101 @@
+# ----------------------------------------------------------------------------
+# Stage 2: Code Quality Workflow
+# This workflow runs linting and code style checks using the same configuration
+# as local pre-commit hooks.
+#
+# Checks:
+# - Black: Code formatting (line length 120, Python 3.12)
+# - isort: Import ordering (black profile, line length 120)
+# - Flake8: PEP8 linting (max line length 120, ignore E203,W503)
+#
+# Uses pyproject.toml configuration for all tools.
+# ----------------------------------------------------------------------------
+
+name: Stage 2 - Code Quality
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  code-quality:
+    name: Linting and Formatting
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install linting dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black==25.1.0 isort==6.0.1 flake8==7.3.0 flake8-pyproject==1.2.3
+
+      - name: Check formatting with Black
+        run: |
+          echo "Running Black formatter check..."
+          black --check --line-length=120 --target-version=py312 app rosemary
+        continue-on-error: false
+
+      - name: Check import order with isort
+        run: |
+          echo "Running isort import checker..."
+          isort --check-only --profile=black --line-length=120 app rosemary
+        continue-on-error: false
+
+      - name: Lint with Flake8
+        run: |
+          echo "Running Flake8 linter..."
+          flake8 --max-line-length=120 --extend-ignore=E203,W503 --show-source --statistics app rosemary
+
+  sonarcloud:
+    name: SonarCloud Static Analysis
+    runs-on: ubuntu-24.04
+    needs: code-quality
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD }}
+
+  codacy:
+    name: Codacy Code Quality Analysis
+    runs-on: ubuntu-24.04
+    needs: code-quality
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+
+    steps:
+      # Ver el historial
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Ejecutar análisis Codacy
+      - name: Run Codacy Analysis CLI
+        uses: codacy/codacy-analysis-cli-action@master
+        with:
+          project-token: ${{ secrets.CODACY }}
+          verbose: true
+          output: codacy-results.sarif
+          format: sarif
+          gh-code-scanning-compat: true
+          max-allowed-issues: 2147483647
+
+      # Subimos los resultados SARIF a la vista de Github Secuiry
+      - name: Upload Codacy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: codacy-results.sarif

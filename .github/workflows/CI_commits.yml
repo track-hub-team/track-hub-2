@@ -1,0 +1,55 @@
+# ----------------------------------------------------------------------------
+# Stage 1: Commit Validation Workflow
+#
+# Validates:
+# - Commit messages follow Conventional Commits specification (commitlint)
+# - Branch names follow EGC Flow convention (feature/bugfix/hotfix)
+#
+# Uses project configuration files for consistency with local development:
+# - .commitlintrc.yaml (commit message rules)
+# - .pre-commit-config.yaml (branch naming logic)
+# ----------------------------------------------------------------------------
+
+name: Stage 1 - Commit Validation
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  validate-commit:
+    name: Validate Commits and Branch Names
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Revisión con historial completo
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # Validar nombrado de ramas según EGC flow como en local
+      - name: Validate branch name (EGC Flow)
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/trunk'
+        run: |
+          branch="${GITHUB_REF#refs/heads/}"
+          if [[ ! "$branch" =~ ^(main|trunk|feature/[a-zA-Z0-9._-]+|bugfix/[a-zA-Z0-9._-]+|hotfix/[a-zA-Z0-9._-]+)$ ]]; then
+            echo "❌ Branch \"$branch\" does not follow EGC Flow."
+            echo ""
+            echo "Valid formats:"
+            echo "  • main (releases only)"
+            echo "  • trunk (integration branch)"
+            echo "  • feature/<task> (new features)"
+            echo "  • bugfix/<task> (bug fixes from trunk)"
+            echo "  • hotfix/<task> (urgent production fixes)"
+            echo ""
+            echo "Example: feature/upload-github or bugfix/dataset-validation"
+            exit 1
+          fi
+
+      # Validar commit con commitlint con la configuración local
+      - name: Validate commit messages (Conventional Commits)
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.yaml
