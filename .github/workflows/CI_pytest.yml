@@ -17,6 +17,10 @@ on:
     branches:
       - '**'
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   test:
     name: Run Tests with Coverage
