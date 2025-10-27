@@ -71,31 +71,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONARCLOUD }}
-
-  codacy:
-    name: Codacy Code Quality Analysis
-    runs-on: ubuntu-24.04
-    needs: code-quality
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
-
-    steps:
-      # Ver el historial
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Ejecutar análisis Codacy
-      - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@master
-        with:
-          project-token: ${{ secrets.CODACY }}
-          verbose: true
-          output: codacy-results.sarif
-          format: sarif
-          gh-code-scanning-compat: true
-          max-allowed-issues: 2147483647
-
-      # Subimos los resultados SARIF a la vista de Github Secuiry
-      - name: Upload Codacy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: codacy-results.sarif
