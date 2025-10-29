@@ -1,0 +1,320 @@
+{% extends "base_template.html" %}
+
+{% block title %}{{ dataset.gpx_meta_data.name }}{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-6">
+        <a href="{{ url_for('gpx.list_gpx') }}" class="btn btn-primary btn-sm" style="border-radius: 5px;">
+            <i data-feather="arrow-left" class="center-button-icon"></i>
+            Back to tracks
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left column: Track information -->
+    <div class="col-xl-8 col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h1><b>{{ dataset.gpx_meta_data.name }}</b></h1>
+                    <div>
+                        {% if dataset.gpx_meta_data.difficulty %}
+                        <span class="badge badge-difficulty-{{ dataset.gpx_meta_data.difficulty.value }}" style="font-size: 1.2rem; padding: 10px;">
+                            {{ dataset.gpx_meta_data.difficulty.value }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="text-secondary">
+                    {% if dataset.gpx_meta_data.start_time %}
+                    {{ dataset.gpx_meta_data.start_time.strftime('%B %d, %Y at %I:%M %p') }}
+                    {% else %}
+                    Uploaded on {{ dataset.created_at.strftime('%B %d, %Y') }}
+                    {% endif %}
+                </p>
+
+                <!-- Track metrics -->
+                <div class="row mb-4 mt-4">
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <i data-feather="map" class="text-primary" style="width: 24px; height: 24px;"></i>
+                            <div class="metric-content">
+                                <span class="metric-label">Distance</span>
+                                <span class="metric-value">
+                                    {% if dataset.gpx_meta_data.length_3d %}
+                                    {{ "%.2f"|format(dataset.gpx_meta_data.length_3d / 1000) }} km
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <i data-feather="arrow-up" class="text-success" style="width: 24px; height: 24px;"></i>
+                            <div class="metric-content">
+                                <span class="metric-label">Elevation Gain</span>
+                                <span class="metric-value">
+                                    {% if dataset.gpx_meta_data.uphill %}
+                                    {{ "%.0f"|format(dataset.gpx_meta_data.uphill) }} m
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <i data-feather="clock" class="text-warning" style="width: 24px; height: 24px;"></i>
+                            <div class="metric-content">
+                                <span class="metric-label">Duration</span>
+                                <span class="metric-value">
+                                    {% if dataset.gpx_meta_data.moving_time %}
+                                    {{ "%.1f"|format(dataset.gpx_meta_data.moving_time / 3600) }} hours
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metric-card">
+                            <i data-feather="trending-up" class="text-info" style="width: 24px; height: 24px;"></i>
+                            <div class="metric-content">
+                                <span class="metric-label">Max Elevation</span>
+                                <span class="metric-value">
+                                    {% if dataset.gpx_meta_data.max_elevation %}
+                                    {{ "%.0f"|format(dataset.gpx_meta_data.max_elevation) }} m
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional details -->
+                {% if dataset.gpx_meta_data.downhill %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">Elevation Loss</span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        {{ "%.0f"|format(dataset.gpx_meta_data.downhill) }} m
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if dataset.gpx_meta_data.max_speed %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">Max Speed</span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        {{ "%.2f"|format(dataset.gpx_meta_data.max_speed * 3.6) }} km/h
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if dataset.gpx_meta_data.hikr_user %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">Uploaded by</span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        {{ dataset.gpx_meta_data.hikr_user }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if dataset.user %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">Imported by</span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        <a href="#">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if dataset.gpx_meta_data.hikr_url %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">Source</span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        <a href="{{ dataset.gpx_meta_data.hikr_url }}" target="_blank">
+                            View on hikr.org <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Map Card -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3><i data-feather="map-pin"></i> Route Map</h3>
+                <div id="map" style="height: 400px; width: 100%; border-radius: 5px; margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: Actions -->
+    <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
+        <div class="list-group">
+            <div class="list-group-item">
+                <div class="row">
+                    <div class="col-12">
+                        <h4>Track Actions</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-group-item">
+                <a href="{{ url_for('gpx.download_gpx', dataset_id=dataset.id) }}" class="btn btn-primary" style="border-radius: 5px; width: 100%;">
+                    <i data-feather="download" class="center-button-icon"></i>
+                    Download GPX File
+                </a>
+            </div>
+
+            {% if dataset.gpx_meta_data.hikr_url %}
+            <div class="list-group-item">
+                <a href="{{ dataset.gpx_meta_data.hikr_url }}" target="_blank" class="btn btn-outline-primary" style="border-radius: 5px; width: 100%;">
+                    <i data-feather="external-link" class="center-button-icon"></i>
+                    View on hikr.org
+                </a>
+            </div>
+            {% endif %}
+
+            <div class="list-group-item">
+                <button onclick="shareTrack()" class="btn btn-outline-secondary" style="border-radius: 5px; width: 100%;">
+                    <i data-feather="share-2" class="center-button-icon"></i>
+                    Share Track
+                </button>
+            </div>
+        </div>
+
+        <!-- Track Statistics -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5>Track Statistics</h5>
+                <hr>
+                <div class="row mb-2">
+                    <div class="col-6 text-secondary">Track ID:</div>
+                    <div class="col-6 text-end">{{ dataset.id }}</div>
+                </div>
+                {% if dataset.gpx_meta_data.hikr_id %}
+                <div class="row mb-2">
+                    <div class="col-6 text-secondary">Hikr ID:</div>
+                    <div class="col-6 text-end">{{ dataset.gpx_meta_data.hikr_id }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-2">
+                    <div class="col-6 text-secondary">Created:</div>
+                    <div class="col-6 text-end">{{ dataset.created_at.strftime('%Y-%m-%d') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Difficulty badges */
+.badge-difficulty-T1 { background-color: #28a745; }
+.badge-difficulty-T2 { background-color: #17a2b8; }
+.badge-difficulty-T3 { background-color: #ffc107; color: black; }
+.badge-difficulty-T4 { background-color: #fd7e14; }
+.badge-difficulty-T5 { background-color: #dc3545; }
+.badge-difficulty-T6 { background-color: #6f42c1; }
+
+/* Metric cards */
+.metric-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.metric-card i {
+    margin-right: 15px;
+}
+
+.metric-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #212529;
+}
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    feather.replace();
+    
+    // Initialize map
+    const map = L.map('map').setView([47.0, 8.0], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add GPX track bounds
+    {% if dataset.gpx_meta_data.bounds_min_lat and dataset.gpx_meta_data.bounds_max_lat %}
+    var minLat = {{ dataset.gpx_meta_data.bounds_min_lat }};
+    var minLon = {{ dataset.gpx_meta_data.bounds_min_lon }};
+    var maxLat = {{ dataset.gpx_meta_data.bounds_max_lat }};
+    var maxLon = {{ dataset.gpx_meta_data.bounds_max_lon }};
+    
+    const bounds = [
+        [minLat, minLon],
+        [maxLat, maxLon]
+    ];
+    map.fitBounds(bounds);
+
+    L.rectangle(bounds, {
+        color: "#007bff",
+        weight: 2,
+        fillOpacity: 0.1
+    }).addTo(map);
+    {% endif %}
+});
+
+function shareTrack() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Track URL copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+</script>
+
+{% endblock %}

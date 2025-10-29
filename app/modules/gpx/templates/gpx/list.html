@@ -1,0 +1,214 @@
+{% extends "base_template.html" %}
+
+{% block title %}Hiking Tracks{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-6">
+        <h1 class="h3 mb-3">Hiking Tracks</h1>
+    </div>
+    <div class="col-6 text-end">
+        <a href="/explore" class="btn btn-primary btn-sm" style="border-radius: 5px;">
+            <i data-feather="search" class="center-button-icon"></i>
+            Explore datasets
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" id="searchInput" class="form-control" 
+               placeholder="🔍 Search by name or location..." 
+               style="border-radius: 5px;">
+    </div>
+    <div class="col-md-3">
+        <select id="difficultyFilter" class="form-control" style="border-radius: 5px;">
+            <option value="">All difficulties</option>
+            <option value="T1">T1 - Hiking</option>
+            <option value="T2">T2 - Mountain hiking</option>
+            <option value="T3">T3 - Demanding mountain hiking</option>
+            <option value="T4">T4 - Alpine hiking</option>
+            <option value="T5">T5 - Demanding alpine hiking</option>
+            <option value="T6">T6 - Difficult alpine hiking</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select id="sortBy" class="form-control" style="border-radius: 5px;">
+            <option value="name">Sort by Name</option>
+            <option value="distance">Sort by Distance</option>
+            <option value="elevation">Sort by Elevation</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <span class="badge bg-dark" style="font-size: 1rem; padding: 10px;">
+            {{ datasets|length }} tracks
+        </span>
+    </div>
+</div>
+
+{% if datasets %}
+<div class="col-12">
+    <div class="card">
+        <div class="card-body">
+            <table class="table" id="gpxTable">
+                <thead>
+                <tr>
+                    <th>Track Name</th>
+                    <th>Difficulty</th>
+                    <th>Distance</th>
+                    <th>Elevation ↑</th>
+                    <th>Duration</th>
+                    <th>User</th>
+                    <th>Options</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for dataset in datasets %}
+                <tr class="gpx-row" 
+                    data-name="{{ dataset.gpx_meta_data.name|lower }}"
+                    data-difficulty="{{ dataset.gpx_meta_data.difficulty.value if dataset.gpx_meta_data.difficulty else '' }}"
+                    data-distance="{{ dataset.gpx_meta_data.length_3d or 0 }}"
+                    data-elevation="{{ dataset.gpx_meta_data.uphill or 0 }}">
+                    <td>
+                        <a href="{{ url_for('gpx.show_gpx', dataset_id=dataset.id) }}">
+                            <i data-feather="map"></i> {{ dataset.gpx_meta_data.name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if dataset.gpx_meta_data.difficulty %}
+                        <span class="badge badge-difficulty-{{ dataset.gpx_meta_data.difficulty.value }}">
+                            {{ dataset.gpx_meta_data.difficulty.value }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if dataset.gpx_meta_data.length_3d %}
+                        {{ "%.2f"|format(dataset.gpx_meta_data.length_3d / 1000) }} km
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if dataset.gpx_meta_data.uphill %}
+                        {{ "%.0f"|format(dataset.gpx_meta_data.uphill) }} m
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if dataset.gpx_meta_data.moving_time %}
+                        {{ "%.1f"|format(dataset.gpx_meta_data.moving_time / 3600) }} h
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if dataset.gpx_meta_data.hikr_user %}
+                        <span class="text-muted">{{ dataset.gpx_meta_data.hikr_user }}</span>
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('gpx.show_gpx', dataset_id=dataset.id) }}" title="View details">
+                            <i data-feather="eye"></i>
+                        </a>
+                        <a href="{{ url_for('gpx.download_gpx', dataset_id=dataset.id) }}" title="Download GPX">
+                            <i data-feather="download"></i>
+                        </a>
+                        {% if dataset.gpx_meta_data.hikr_url %}
+                        <a href="{{ dataset.gpx_meta_data.hikr_url }}" target="_blank" title="View on hikr.org">
+                            <i data-feather="external-link"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="col-12 col-md-6">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">No hiking tracks found</h5>
+        </div>
+        <div class="card-body">
+            <p class="card-text">
+                No GPX hiking tracks have been imported yet.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+/* Difficulty badges */
+.badge-difficulty-T1 { background-color: #28a745; color: white; }
+.badge-difficulty-T2 { background-color: #17a2b8; color: white; }
+.badge-difficulty-T3 { background-color: #ffc107; color: black; }
+.badge-difficulty-T4 { background-color: #fd7e14; color: white; }
+.badge-difficulty-T5 { background-color: #dc3545; color: white; }
+.badge-difficulty-T6 { background-color: #6f42c1; color: white; }
+
+/* Table hover effect */
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    feather.replace();
+    
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+    document.getElementById('difficultyFilter').addEventListener('change', filterTable);
+    document.getElementById('sortBy').addEventListener('change', sortTable);
+});
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const difficulty = document.getElementById('difficultyFilter').value;
+    const rows = document.querySelectorAll('.gpx-row');
+
+    rows.forEach(row => {
+        const name = row.dataset.name;
+        const rowDifficulty = row.dataset.difficulty;
+        
+        const matchesSearch = name.includes(searchTerm);
+        const matchesDifficulty = !difficulty || rowDifficulty === difficulty;
+        
+        row.style.display = (matchesSearch && matchesDifficulty) ? '' : 'none';
+    });
+}
+
+function sortTable() {
+    const sortBy = document.getElementById('sortBy').value;
+    const tbody = document.querySelector('#gpxTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('.gpx-row'));
+
+    rows.sort((a, b) => {
+        switch(sortBy) {
+            case 'distance':
+                return parseFloat(b.dataset.distance) - parseFloat(a.dataset.distance);
+            case 'elevation':
+                return parseFloat(b.dataset.elevation) - parseFloat(a.dataset.elevation);
+            case 'name':
+            default:
+                return a.dataset.name.localeCompare(b.dataset.name);
+        }
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+
+{% endblock %}
