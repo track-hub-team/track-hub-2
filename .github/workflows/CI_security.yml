@@ -95,7 +95,7 @@ jobs:
           if [ -f bandit-report.json ]; then
             echo "### 📊 Summary:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            jq -r '.metrics._totals | "Lines of code: \(.loc // 0)\nIssues found: \(.SEVERITY // 0)"' bandit-report.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Metrics parsing error" >> $GITHUB_STEP_SUMMARY
+            jq -r '"Lines of code: \(.metrics._totals.loc // 0)\nTotal issues: \(.results | length)\n\nBy severity:\n  High: \(.metrics._totals[\"SEVERITY.HIGH\"] // 0)\n  Medium: \(.metrics._totals[\"SEVERITY.MEDIUM\"] // 0)\n  Low: \(.metrics._totals[\"SEVERITY.LOW\"] // 0)"' bandit-report.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Metrics parsing error" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
