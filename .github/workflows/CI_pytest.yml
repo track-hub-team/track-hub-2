@@ -26,7 +26,6 @@ jobs:
     name: Run Tests with Coverage
     runs-on: ubuntu-24.04
 
-    # Global environment variables shared across services and steps
     env:
       MARIADB_ROOT_PASSWORD: uvlhub_root_password
       MARIADB_DATABASE: uvlhubdb_test
@@ -39,7 +38,6 @@ jobs:
       WORKING_DIR: ""
 
     services:
-      # MariaDB service container for integration tests
       mariadb:
         image: mariadb:12.0.2
         env:
@@ -57,27 +55,22 @@ jobs:
 
     steps:
 
-      # Step 1: Checkout the repository code
       - name: Checkout
         uses: actions/checkout@v5
 
-      # Step 2: Set up Python environment (version 3.12)
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
-      # Step 3: Remove local editable mode for rosemary dependency (not CI-friendly)
       - name: Delete rosemary editable mode
         run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
 
-      # Step 4: Install Python dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 5a: Run tests only (feature branches)
       - name: Run tests (feature branches)
         if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/trunk'
         run: |
@@ -85,33 +78,28 @@ jobs:
             --ignore-glob='*selenium*' \
             -v
 
-      # Step 5b: Run tests with coverage (trunk and main - complete analysis)
       - name: Run tests with coverage (trunk/main)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
         run: |
           pytest app/modules/ \
             --ignore-glob='*selenium*' \
-            --cov=app \
-            --cov=rosemary \
-            --cov=core \
+            --cov=app/modules \
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term-missing \
-            --cov-fail-under=20 \
+            --cov-fail-under=50 \
             --junitxml=pytest-report.xml \
             -v
 
-      # Step 6: Generate coverage summary (only for trunk/main)
       - name: Coverage Summary
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
         run: |
           echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
 
-      # Step 7: Upload coverage to Codecov (only for trunk/main)
       - name: Upload coverage to Codecov
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -120,9 +108,8 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      # Step 8: Upload coverage reports as artifacts (only for trunk/main)
       - name: Upload coverage reports
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
@@ -132,9 +119,8 @@ jobs:
             pytest-report.xml
           retention-days: 30
 
-      # Step 9: Publish test results (only for trunk/main)
       - name: Publish test results
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk') && always()
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: pytest-report.xml

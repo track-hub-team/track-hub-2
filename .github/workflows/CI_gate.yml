@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      # Esperamos a que se completen todos los workflows
       - name: Wait for CI workflows to complete
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
@@ -31,7 +30,6 @@ jobs:
           running-workflow-name: 'CI Gate - All Checks Must Pass'
           check-regexp: '^(Validate Commits and Branch Names|Linting and Formatting|Run Tests with Coverage|Dependency Vulnerability Scan)$'
 
-      # Si hay éxito
       - name: CI Gate Passed
         run: |
           echo "## ✅ CI Gate Passed" >> $GITHUB_STEP_SUMMARY
