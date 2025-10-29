@@ -7,8 +7,6 @@
 # - Black: Code formatting (line length 120, Python 3.12)
 # - isort: Import ordering (black profile, line length 120)
 # - Flake8: PEP8 linting (max line length 120, ignore E203,W503)
-#
-# Uses pyproject.toml configuration for all tools.
 # ----------------------------------------------------------------------------
 
 name: Stage 2 - Code Quality

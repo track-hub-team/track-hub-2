@@ -23,13 +23,11 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      # Revisión con historial completo
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
-      # Validar nombrado de ramas según EGC flow como en local
       - name: Validate branch name (EGC Flow)
         if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/trunk'
         run: |
@@ -48,7 +46,6 @@ jobs:
             exit 1
           fi
 
-      # Validar commit con commitlint con la configuración local
       - name: Validate commit messages (Conventional Commits)
         uses: wagoid/commitlint-github-action@v6
         with:

@@ -8,7 +8,6 @@
 # - Static Application Security Testing (SAST) with Bandit
 # - Secret scanning with TruffleHog
 #
-# Runs on all branches to catch security issues early.
 # ----------------------------------------------------------------------------
 
 name: Stage 4 - Security
@@ -81,17 +80,41 @@ jobs:
         run: |
           echo "## SAST Security Scan (Bandit)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          bandit -r app rosemary core -f json -o bandit-report.json || true
-          bandit -r app rosemary core -f screen
-        continue-on-error: true
+          echo "⚠️ **Note**: This scan reports security issues but does not block the pipeline." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload Bandit report
+          # Generate JSON and SARIF reports
+          bandit -r app rosemary core -f json -o bandit-report.json || true
+          bandit -r app rosemary core -f sarif -o bandit-report.sarif || true
+
+          # Add summary to step output
+          if [ -f bandit-report.json ]; then
+            echo "### 📊 Summary:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            jq -r '.metrics._totals | "Lines of code: \(.loc // 0)\nIssues found: \(.SEVERITY // 0)"' bandit-report.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Metrics parsing error" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Show console output
+          bandit -r app rosemary core -f screen || echo "⚠️ Security issues found but continuing..."
+
+      - name: Upload Bandit reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bandit-report
-          path: bandit-report.json
+          name: bandit-reports
+          path: |
+            bandit-report.json
+            bandit-report.sarif
           retention-days: 30
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-report.sarif
+          category: bandit
+        continue-on-error: true
 
   owasp-dependency-check:
     name: OWASP Dependency Check
