@@ -1,0 +1,136 @@
+{% extends "base_template.html" %}
+
+{% block title %}Edit Track - {{ dataset.gpx_meta_data.name }}{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ url_for('gpx.show_gpx', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm">
+            <i data-feather="arrow-left"></i> Back to track
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <div class="card">
+            <div class="card-body">
+                <h1><b>Edit Track</b></h1>
+                <p class="text-secondary">Update track metadata</p>
+
+                <form method="POST" action="{{ url_for('gpx.edit_gpx', dataset_id=dataset.id) }}" class="mt-4">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Track Name *</label>
+                        {{ form.name(class="form-control", placeholder="Enter track name") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="difficulty" class="form-label">Difficulty Rating</label>
+                        {{ form.difficulty(class="form-select") }}
+                        {% if form.difficulty.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.difficulty.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-1">
+                            Based on SAC hiking scale:
+                            <ul class="mb-0 mt-1" style="font-size: 0.85rem;">
+                                <li><strong>T1</strong>: Hiking - Well maintained paths</li>
+                                <li><strong>T2</strong>: Mountain hiking - Clear, sometimes steep paths</li>
+                                <li><strong>T3</strong>: Demanding mountain hiking - Exposed areas, may require hands</li>
+                                <li><strong>T4</strong>: Alpine hiking - Easy climbing, good head for heights required</li>
+                                <li><strong>T5</strong>: Demanding alpine hiking - Simple climbing, experience needed</li>
+                                <li><strong>T6</strong>: Difficult alpine hiking - Climbing skills essential</li>
+                            </ul>
+                        </small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="changelog" class="form-label">What did you change? *</label>
+                        {{ form.changelog(class="form-control", rows="3", placeholder="Describe what you changed (e.g., 'Updated difficulty from T2 to T3')") }}
+                        {% if form.changelog.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.changelog.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-1">
+                            This will be saved in the version history
+                        </small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i data-feather="info"></i>
+                        <strong>Note:</strong> This will create a new version (v{{ version_count + 1 }}) in the version history.
+                        The current version will be preserved.
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mb-3">Current Track Metrics</h5>
+                    <div class="row text-center mb-4">
+                        <div class="col-md-3 col-6 mb-2">
+                            <small class="text-muted d-block">Distance</small>
+                            <strong>{{ "%.1f"|format(dataset.gpx_meta_data.length_3d / 1000) if dataset.gpx_meta_data.length_3d else 'N/A' }} km</strong>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <small class="text-muted d-block">Elevation Gain</small>
+                            <strong>{{ "%.0f"|format(dataset.gpx_meta_data.uphill) if dataset.gpx_meta_data.uphill else 'N/A' }} m</strong>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <small class="text-muted d-block">Max Elevation</small>
+                            <strong>{{ "%.0f"|format(dataset.gpx_meta_data.max_elevation) if dataset.gpx_meta_data.max_elevation else 'N/A' }} m</strong>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <small class="text-muted d-block">Moving Time</small>
+                            <strong>
+                                {% if dataset.gpx_meta_data.moving_time %}
+                                    {{ "%d"|format(dataset.gpx_meta_data.moving_time // 3600) }}h 
+                                    {{ "%d"|format((dataset.gpx_meta_data.moving_time % 3600) // 60) }}m
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <small class="text-muted">
+                        <i data-feather="alert-circle" style="width: 14px; height: 14px;"></i>
+                        Track metrics are automatically calculated from the GPX file and cannot be edited manually.
+                    </small>
+
+                    <hr class="mt-4">
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('gpx.show_gpx', dataset_id=dataset.id) }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="save"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+</script>
+
+{% endblock %}

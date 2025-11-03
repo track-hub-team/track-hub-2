@@ -1,0 +1,85 @@
+{% extends "base_template.html" %}
+
+{% block title %}Version History - {{ dataset.gpx_meta_data.name }}{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ url_for('gpx.show_gpx', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm">
+            <i data-feather="arrow-left"></i> Back to track
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h1><b>Version History</b></h1>
+                <p class="text-secondary">{{ dataset.gpx_meta_data.name }}</p>
+                
+                <div class="table-responsive mt-4">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Date</th>
+                                <th>Changes</th>
+                                <th>Created by</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for version in versions %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">v{{ version.version_number }}</span>
+                                    {% if loop.first %}
+                                        <span class="badge bg-success">Current</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ version.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ version.changelog or 'No description' }}</td>
+                                <td>
+                                    {% if version.created_by %}
+                                        {{ version.created_by.profile.name }} {{ version.created_by.profile.surname }}
+                                    {% else %}
+                                        System
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('gpx.download_gpx', dataset_id=dataset.id, version=version.version_number) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i data-feather="download" style="width: 14px; height: 14px;"></i>
+                                        Download
+                                    </a>
+                                    
+                                    {% if not loop.first and dataset.user_id == current_user.id %}
+                                    <form method="POST" 
+                                          action="{{ url_for('gpx.restore_version', dataset_id=dataset.id, version_number=version.version_number) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-outline-warning"
+                                                onclick="return confirm('Restore to version {{ version.version_number }}? This will create a new version.')">
+                                            <i data-feather="rotate-ccw" style="width: 14px; height: 14px;"></i>
+                                            Restore
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+</script>
+
+{% endblock %}

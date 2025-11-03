@@ -1,0 +1,114 @@
+2025-11-02 18:32:34,751 - app - ERROR - Exception on /gpx/34921/edit [GET]
+Traceback (most recent call last):
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
+    return original_handler(e)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/app/modules/gpx/routes.py", line 150, in edit_gpx
+    return render_template('gpx/edit.html', form=form, dataset=dataset)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/templating.py", line 149, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/jinja2/environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/jinja2/loaders.py", line 126, in load
+    source, filename, uptodate = self.get_source(environment, name)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/templating.py", line 65, in get_source
+    return self._get_source_fast(environment, template)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/templating.py", line 99, in _get_source_fast
+    raise TemplateNotFound(template)
+jinja2.exceptions.TemplateNotFound: gpx/edit.html
+2025-11-02 18:32:34,753 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-11-02 18:34:49,439 - app - ERROR - Exception on /gpx/34921/edit [GET]
+Traceback (most recent call last):
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
+    return original_handler(e)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/app/modules/gpx/routes.py", line 150, in edit_gpx
+    return render_template('gpx/edit.html', form=form, dataset=dataset)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/app/modules/gpx/templates/gpx/edit.html", line 1, in top-level template code
+    {% extends "base_template.html" %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/app/templates/base_template.html", line 200, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/app/modules/gpx/templates/gpx/edit.html", line 89, in block 'content'
+    <strong>Note:</strong> This will create a new version (v{{ (dataset.versions|length) + 1 if dataset.versions else 2 }}) in the version history.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: object of type 'AppenderQuery' has no len()
+2025-11-02 18:34:49,441 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-11-02 18:37:10,465 - app - ERROR - Exception on /gpx/34921/edit [GET]
+Traceback (most recent call last):
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
+    return original_handler(e)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adolfo/Escritorio/Proyecto EGC/track-hub-2/app/modules/gpx/routes.py", line 141, in edit_gpx
+    form.description.data = dataset.description  # From BaseDataset
+                            ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'GPXDataset' object has no attribute 'description'
+2025-11-02 18:37:10,470 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.

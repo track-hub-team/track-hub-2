@@ -6,6 +6,7 @@ import uuid
 from typing import Optional
 
 from flask import request
+from app.modules.dataset.models import DatasetVersion, UVLVersion, GPXVersion, BaseDataset
 
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
@@ -24,6 +25,8 @@ from app.modules.hubfile.repositories import (
     HubfileViewRecordRepository,
 )
 from core.services.BaseService import BaseService
+from app import db
+from flask_login import current_user
 
 logger = logging.getLogger(__name__)
 
@@ -212,3 +215,126 @@ class SizeService:
             return f"{round(size / (1024 ** 2), 2)} MB"
         else:
             return f"{round(size / (1024 ** 3), 2)} GB"
+        
+class VersionService:
+    """Universal versioning service for all dataset types"""
+    
+    @staticmethod
+    def create_version(dataset, changelog="Initial version", user_id=None):
+        """Create a new version for any dataset type"""
+        
+        # Get current version number
+        last_version = dataset.versions.order_by(DatasetVersion.version_number.desc()).first()
+        new_version_number = (last_version.version_number + 1) if last_version else 1
+        
+        # Create version based on dataset type
+        if dataset.dataset_type == 'gpx':
+            return VersionService._create_gpx_version(dataset, new_version_number, changelog, user_id)
+        elif dataset.dataset_type == 'uvl':
+            return VersionService._create_uvl_version(dataset, new_version_number, changelog, user_id)
+        else:
+            raise ValueError(f"Unsupported dataset type: {dataset.dataset_type}")
+    
+    @staticmethod
+    def _create_gpx_version(dataset, version_number, changelog, user_id=None):
+        """Create version for GPX dataset"""
+        
+        # Determine user_id
+        if user_id is None:
+            # Try to get from current_user if available
+            try:
+                if current_user.is_authenticated:
+                    user_id = current_user.id
+            except:
+                # Flask shell or no user context
+                user_id = None
+        
+        # Create snapshot of current state
+        metadata_snapshot = {
+            'name': dataset.gpx_meta_data.name,
+            'difficulty': dataset.gpx_meta_data.difficulty.value if dataset.gpx_meta_data.difficulty else None,
+            'length_3d': dataset.gpx_meta_data.length_3d,
+            'uphill': dataset.gpx_meta_data.uphill,
+            'downhill': dataset.gpx_meta_data.downhill,
+            'moving_time': dataset.gpx_meta_data.moving_time,
+            'max_elevation': dataset.gpx_meta_data.max_elevation,
+            'max_speed': dataset.gpx_meta_data.max_speed,
+            'hikr_user': dataset.gpx_meta_data.hikr_user,
+            'hikr_url': dataset.gpx_meta_data.hikr_url,
+        }
+        
+        version = GPXVersion(
+            dataset_id=dataset.id,
+            version_number=version_number,
+            changelog=changelog,
+            created_by_id=user_id,  # ← Ahora puede ser None
+            gpx_content=dataset.gpx_meta_data.gpx_content,
+            metadata_snapshot=metadata_snapshot
+        )
+        
+        db.session.add(version)
+        db.session.commit()
+        
+        return version
+    
+    @staticmethod
+    def _create_uvl_version(dataset, version_number, changelog, user_id=None):
+        """Create version for UVL dataset"""
+        # TODO: Implement UVL versioning
+        pass
+    
+    @staticmethod
+    def get_versions(dataset_id):
+        """Get all versions of a dataset"""
+        return DatasetVersion.query.filter_by(
+            dataset_id=dataset_id
+        ).order_by(DatasetVersion.version_number.desc()).all()
+    
+    @staticmethod
+    def get_version(dataset_id, version_number):
+        """Get specific version"""
+        return DatasetVersion.query.filter_by(
+            dataset_id=dataset_id,
+            version_number=version_number
+        ).first()
+    
+    @staticmethod
+    def restore_version(dataset_id, version_number):
+        """Restore dataset to a previous version"""
+        version = VersionService.get_version(dataset_id, version_number)
+        
+        if not version:
+            raise ValueError(f"Version {version_number} not found")
+        
+        dataset = BaseDataset.query.get(dataset_id)
+        
+        if dataset.dataset_type == 'gpx':
+            return VersionService._restore_gpx_version(dataset, version)
+        elif dataset.dataset_type == 'uvl':
+            return VersionService._restore_uvl_version(dataset, version)
+    
+    @staticmethod
+    def _restore_gpx_version(dataset, version):
+        """Restore GPX dataset to previous version"""
+        # Restore GPX content
+        dataset.gpx_meta_data.gpx_content = version.gpx_content
+        
+        # Restore metadata
+        metadata = version.metadata_snapshot
+        dataset.gpx_meta_data.name = metadata.get('name')
+        dataset.gpx_meta_data.length_3d = metadata.get('length_3d')
+        dataset.gpx_meta_data.uphill = metadata.get('uphill')
+        
+        db.session.commit()
+        
+        # Create new version marking restoration
+        return VersionService.create_version(
+            dataset, 
+            f"Restored to version {version.version_number}"
+        )
+    
+    @staticmethod
+    def _restore_uvl_version(dataset, version):
+        """Restore UVL dataset to previous version"""
+        # TODO: Implement UVL restoration
+        pass

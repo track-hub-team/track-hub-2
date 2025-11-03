@@ -9,28 +9,22 @@
     <div class="row">
 
         <h3 class="h3 mb-3">
-                <span id="results_number"></span>
-            </h3>
+            <span id="results_number"></span>
+        </h3>
 
         <div class="col-lg-7 scrollable-column">
-
 
             <div class="row">
 
                 <div id="results"></div>
 
-                <div class="col text-center" id="results_not_found">
+                <div class="col text-center" id="results_not_found" style="display: none;">
                     <img src="{{ url_for('static', filename='img/items/not_found.svg') }}"
                          style="width: 50%; max-width: 100px; height: auto; margin-top: 30px"/>
                     <p style="margin-top: 20px">
                         We have not found any datasets that meet your search criteria. <br>How about trying some others?
                     </p>
                 </div>
-
-                <div id="results_not_found" style="text-align: center;">
-
-                </div>
-
 
             </div>
         </div>
@@ -51,16 +45,26 @@
                                     Search for datasets by title, description, authors, tags, UVL files...
                                 </label>
                                 <input class="form-control" id="query" name="query" required="" type="text"
-                                       value="" autofocus>
+                                       value="" autofocus placeholder="Search datasets and hiking tracks...">
+                            </div>
+                        </div>
+
+                        <!-- ✨ NUEVO: Filtro de tipo de dataset -->
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="dataset_type">Filter by dataset type</label>
+                                <select class="form-control" id="dataset_type" name="dataset_type">
+                                    <option value="any">Any</option>
+                                    <option value="uvl">UVL Feature Models</option>
+                                    <option value="gpx">Hiking Tracks (GPX)</option>
+                                </select>
                             </div>
                         </div>
 
                         <div class="col-lg-6">
                             <div class="mb-3">
-                                <label class="form-label" for="publication_type">Filter by publication
-                                    type</label>
-                                <select class="form-control" id="publication_type" name="publication_type"
-                                        required="">
+                                <label class="form-label" for="publication_type">Filter by publication type</label>
+                                <select class="form-control" id="publication_type" name="publication_type" required="">
                                     <option value="any">Any</option>
                                     <option value="none">None</option>
                                     <option value="annotationcollection">Annotation Collection</option>
@@ -83,7 +87,22 @@
                                     <option value="other">Other</option>
                                 </select>
                             </div>
+                        </div>
 
+                        <!-- ✨ NUEVO: Filtro de dificultad GPX (solo visible cuando dataset_type=gpx) -->
+                        <div class="col-lg-6" id="gpx_difficulty_filter" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label" for="gpx_difficulty">Filter by difficulty</label>
+                                <select class="form-control" id="gpx_difficulty" name="gpx_difficulty">
+                                    <option value="any">Any difficulty</option>
+                                    <option value="T1">T1 - Hiking</option>
+                                    <option value="T2">T2 - Mountain hiking</option>
+                                    <option value="T3">T3 - Demanding mountain hiking</option>
+                                    <option value="T4">T4 - Alpine hiking</option>
+                                    <option value="T5">T5 - Demanding alpine hiking</option>
+                                    <option value="T6">T6 - Difficult alpine hiking</option>
+                                </select>
+                            </div>
                         </div>
 
                     </div>
@@ -91,24 +110,17 @@
                     <div class="row">
 
                         <div class="col-6">
-
                             <div>
                                 Sort results by creation date
                                 <label class="form-check">
-                                    <input class="form-check-input" type="radio" value="newest" name="sorting"
-                                           checked="">
-                                    <span class="form-check-label">
-                                      Newest first
-                                    </span>
+                                    <input class="form-check-input" type="radio" value="newest" name="sorting" checked="">
+                                    <span class="form-check-label">Newest first</span>
                                 </label>
                                 <label class="form-check">
                                     <input class="form-check-input" type="radio" value="oldest" name="sorting">
-                                    <span class="form-check-label">
-                                      Oldest first
-                                    </span>
+                                    <span class="form-check-label">Oldest first</span>
                                 </label>
                             </div>
-
                         </div>
 
                     </div>
@@ -119,15 +131,12 @@
 
                             <div class="mt-3">
 
-                                <div id="authors">
-
-                                </div>
+                                <div id="authors"></div>
 
                                 <button id="clear-filters" class="btn btn-outline-primary">
                                     <i data-feather="x-circle" style="vertical-align: middle; margin-top: -2px"></i>
                                     Clear filters
                                 </button>
-
 
                             </div>
 
@@ -138,18 +147,65 @@
 
             </div>
 
-            <div class="row">
-
-            </div>
-
         </div>
 
-
     </div>
-
 
 {% endblock %}
 
 {% block scripts %}
     <script src="{{ url_for('explore.scripts') }}"></script>
+    
+    <!-- ✨ Script adicional para manejar filtros GPX -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const datasetTypeSelect = document.getElementById('dataset_type');
+            const gpxDifficultyFilter = document.getElementById('gpx_difficulty_filter');
+            const publicationTypeFilter = document.getElementById('publication_type').closest('.col-lg-6');
+
+            // Mostrar/ocultar filtros según el tipo de dataset
+            datasetTypeSelect.addEventListener('change', function() {
+                if (this.value === 'gpx') {
+                    // Mostrar filtro de dificultad GPX
+                    gpxDifficultyFilter.style.display = 'block';
+                    // Ocultar filtro de publication type (no aplica a GPX)
+                    publicationTypeFilter.style.display = 'none';
+                    // Resetear publication type
+                    document.getElementById('publication_type').value = 'any';
+                } else if (this.value === 'uvl') {
+                    // Ocultar filtro GPX
+                    gpxDifficultyFilter.style.display = 'none';
+                    // Mostrar filtro de publication type
+                    publicationTypeFilter.style.display = 'block';
+                } else {
+                    // Mostrar ambos filtros en "All datasets"
+                    gpxDifficultyFilter.style.display = 'none';
+                    publicationTypeFilter.style.display = 'block';
+                }
+                
+                // Trigger search when filter changes
+                document.getElementById('query').dispatchEvent(new Event('input'));
+            });
+
+            // También aplicar filtro de dificultad GPX
+            document.getElementById('gpx_difficulty').addEventListener('change', function() {
+                document.getElementById('query').dispatchEvent(new Event('input'));
+            });
+
+            // Actualizar clear filters para incluir dataset_type
+            const clearButton = document.getElementById('clear-filters');
+            const originalClearHandler = clearButton.onclick;
+            
+            clearButton.addEventListener('click', function() {
+                document.getElementById('dataset_type').value = 'any';
+                document.getElementById('gpx_difficulty').value = 'any';
+                gpxDifficultyFilter.style.display = 'none';
+                publicationTypeFilter.style.display = 'block';
+                
+                if (originalClearHandler) {
+                    originalClearHandler.call(this);
+                }
+            });
+        });
+    </script>
 {% endblock %}

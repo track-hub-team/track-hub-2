@@ -6,9 +6,9 @@
 
 <div class="row mb-3">
     <div class="col-6">
-        <a href="{{ url_for('gpx.list_gpx') }}" class="btn btn-primary btn-sm" style="border-radius: 5px;">
+        <a href="{{ url_for('explore.index') }}" class="btn btn-primary btn-sm" style="border-radius: 5px;">
             <i data-feather="arrow-left" class="center-button-icon"></i>
-            Back to tracks
+            Back to explore
         </a>
     </div>
 </div>
@@ -207,6 +207,22 @@
             </div>
         </div>
 
+        <div class="list-group-item">
+            <a href="{{ url_for('gpx.list_versions', dataset_id=dataset.id) }}" class="btn btn-outline-secondary" style="border-radius: 5px; width: 100%;">
+                <i data-feather="clock" class="center-button-icon"></i>
+                Version History ({{ versions|length }})
+            </a>
+        </div>
+
+        {% if dataset.user_id == current_user.id %}
+        <div class="list-group-item">
+            <a href="{{ url_for('gpx.edit_gpx', dataset_id=dataset.id) }}" class="btn btn-outline-warning" style="border-radius: 5px; width: 100%;">
+                <i data-feather="edit" class="center-button-icon"></i>
+                Edit Track
+            </a>
+        </div>
+        {% endif %}
+
         <!-- Track Statistics -->
         <div class="card mt-3">
             <div class="card-body">
@@ -271,6 +287,7 @@
     color: #212529;
 }
 </style>
+
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

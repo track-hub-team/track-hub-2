@@ -210,3 +210,61 @@ class DOIMapping(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     dataset_doi_old = db.Column(db.String(120))
     dataset_doi_new = db.Column(db.String(120))
+
+class DatasetVersion(db.Model):
+    """Base model for dataset versioning - works for any dataset type"""
+    __tablename__ = 'dataset_version'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey('base_dataset.id'), nullable=False)
+    version_number = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    changelog = db.Column(db.Text)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    # Polymorphic identity
+    version_type = db.Column(db.String(50))
+    
+    # Relationships
+    dataset = db.relationship('BaseDataset', backref=db.backref('versions', lazy='dynamic'))
+    created_by = db.relationship('User')
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'base',
+        'polymorphic_on': version_type
+    }
+    
+    def __repr__(self):
+        return f'<DatasetVersion {self.dataset_id} v{self.version_number}>'
+
+
+class UVLVersion(DatasetVersion):
+    """Version history for UVL datasets"""
+    __tablename__ = 'uvl_version'
+    
+    id = db.Column(db.Integer, db.ForeignKey('dataset_version.id'), primary_key=True)
+    
+    # Store snapshot of feature models
+    feature_models_snapshot = db.Column(db.JSON)  # List of file paths/hashes
+    metadata_snapshot = db.Column(db.JSON)  # DSMetaData as JSON
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'uvl',
+    }
+
+
+class GPXVersion(DatasetVersion):
+    """Version history for GPX datasets"""
+    __tablename__ = 'gpx_version'
+    
+    id = db.Column(db.Integer, db.ForeignKey('dataset_version.id'), primary_key=True)
+    
+    # Store complete GPX content
+    gpx_content = db.Column(db.Text, nullable=False)
+    
+    # Snapshot of metadata
+    metadata_snapshot = db.Column(db.JSON)
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'gpx',
+    }

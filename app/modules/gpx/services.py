@@ -9,12 +9,51 @@ from app.modules.auth.models import User
 from app.modules.gpx.repositories import GPXDatasetRepository, GPXMetaDataRepository
 from app.modules.gpx.models import GPXDifficultyRating
 from core.services.BaseService import BaseService
-
+from app import db
+from app.modules.gpx.models import GPXDataset, GPXMetaData
+from app.modules.dataset.models import BaseDataset
 
 class GPXDatasetService(BaseService):
     def __init__(self):
         super().__init__(GPXDatasetRepository())
         self.gpx_metadata_repository = GPXMetaDataRepository()
+
+    def create_from_upload(self, user_id, name, difficulty, description, gpx_content, gpx_data):
+        """Create GPX dataset from user upload"""
+        
+        # Create metadata
+        metadata = GPXMetaData(
+            name=name,
+            difficulty=GPXDifficultyRating[difficulty] if difficulty else None,
+            length_3d=gpx_data.get('length_3d'),
+            uphill=gpx_data.get('uphill'),
+            downhill=gpx_data.get('downhill'),
+            moving_time=gpx_data.get('moving_time'),
+            max_elevation=gpx_data.get('max_elevation'),
+            max_speed=gpx_data.get('max_speed'),
+            gpx_content=gpx_content,
+            bounds_min_lat=gpx_data.get('bounds_min_lat'),
+            bounds_max_lat=gpx_data.get('bounds_max_lat'),
+            bounds_min_lon=gpx_data.get('bounds_min_lon'),
+            bounds_max_lon=gpx_data.get('bounds_max_lon'),
+            start_time=gpx_data.get('start_time'),
+            hikr_user=None,  # User upload, not from hikr
+            hikr_url=None,
+            hikr_id=None
+        )
+        
+        # Create dataset
+        dataset = GPXDataset(
+            dataset_type='gpx',
+            user_id=user_id,
+            gpx_meta_data=metadata
+        )
+        
+        db.session.add(metadata)
+        db.session.add(dataset)
+        db.session.commit()
+        
+        return dataset
 
     def import_from_csv(self, file, user: User) -> dict:
         """Import GPX datasets from CSV file"""
