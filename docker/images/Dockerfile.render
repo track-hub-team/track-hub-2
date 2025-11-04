@@ -8,7 +8,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && apt-get install -y --no-install-recommends bash \
     && apt-get install -y --no-install-recommends openrc \
-    && apt-get install -y --no-install-recommends build-essential 
+    && apt-get install -y --no-install-recommends build-essential \
+    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends inotify-tools
 
 # Clean up
 RUN apt-get clean \
@@ -36,6 +38,10 @@ RUN chmod +x /app/render_entrypoint.sh
 # Copy the wait-for-db.sh script and set execution permissions
 COPY scripts/wait-for-db.sh /app/scripts/wait-for-db.sh
 RUN chmod +x /app/scripts/wait-for-db.sh
+
+# Copy the sync_uploads.sh script and set execution permissions
+COPY scripts/sync_uploads.sh /app/scripts/sync_uploads.sh
+RUN chmod +x /app/scripts/sync_uploads.sh
 
 # Create the .moduleignore file with the module 'webhook' inside
 RUN echo "webhook" > /app/.moduleignore

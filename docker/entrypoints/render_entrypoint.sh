@@ -15,6 +15,15 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+# Sync uploads folder with Git repository
+if [ -n "$UPLOADS_GIT_REPO_URL" ]; then
+    echo "Synchronizing uploads folder..."
+    sh /app/scripts/sync_uploads.sh
+else
+    echo "UPLOADS_GIT_REPO_URL not set, skipping uploads sync"
+    mkdir -p "${WORKING_DIR}uploads"
+fi
+
 # Initialize migrations only if the migrations directory doesn't exist
 if [ ! -d "migrations/versions" ]; then
     # Initialize the migration repository
@@ -24,7 +33,7 @@ fi
 
 # Check if the database is empty
 if [ $(mariadb -u $MARIADB_USER -p$MARIADB_PASSWORD -h $MARIADB_HOSTNAME -P $MARIADB_PORT -D $MARIADB_DATABASE -sse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$MARIADB_DATABASE';") -eq 0 ]; then
- 
+
     echo "Empty database, migrating..."
 
     # Get the latest migration revision
