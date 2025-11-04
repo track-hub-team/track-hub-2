@@ -283,3 +283,80 @@ def get_unsynchronized_dataset(dataset_id):
         abort(404)
 
     return render_template("dataset/view_dataset.html", dataset=dataset, FLASK_ENV=os.getenv("FLASK_ENV", "development"))
+
+
+@dataset_bp.route('/api/gpx/<int:file_id>')
+def get_gpx_data(file_id):
+    """Retorna datos parseados de un archivo GPX."""
+    from app.modules.dataset.handlers.gpx_handler import GPXHandler
+    from flask import jsonify, current_app
+    import logging
+    import os
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from app import db
+        
+        # Obtener todo en una query
+        result = db.session.execute(
+            db.text("""
+                SELECT 
+                    ds.user_id,
+                    ds.id as dataset_id,
+                    dsm.dataset_doi,
+                    f.id as file_id,
+                    f.name as file_name
+                FROM feature_model fm
+                JOIN data_set ds ON fm.data_set_id = ds.id
+                LEFT JOIN ds_meta_data dsm ON ds.ds_meta_data_id = dsm.id
+                LEFT JOIN file f ON f.feature_model_id = fm.id
+                WHERE fm.fm_meta_data_id = :file_id
+                LIMIT 1
+            """),
+            {"file_id": file_id}
+        ).first()
+        
+        if not result:
+            return jsonify({'error': 'File not found'}), 404
+        
+        user_id, dataset_id, dataset_doi, gpx_file_id, gpx_file_name = result
+        
+        # Verificar que sea GPX
+        if not gpx_file_name or not gpx_file_name.lower().endswith('.gpx'):
+            return jsonify({'error': 'File is not a GPX file'}), 400
+        
+        # Verificar permisos
+        if not dataset_doi:
+            if not current_user.is_authenticated or user_id != current_user.id:
+                return jsonify({'error': 'Unauthorized'}), 403
+        
+        # ✅ Construir la ruta desde el directorio raíz del proyecto (sin /app)
+        # current_app.root_path = /path/to/project/app
+        # Necesitamos: /path/to/project/uploads
+        project_root = os.path.dirname(current_app.root_path)
+        
+        file_path = os.path.join(
+            project_root,
+            "uploads",
+            f"user_{user_id}",
+            f"dataset_{dataset_id}",
+            gpx_file_name
+        )
+        
+        if not os.path.exists(file_path):
+            logger.error(f"File not found at: {file_path}")
+            return jsonify({'error': 'File not found on disk'}), 404
+        
+        # Parsear el GPX
+        handler = GPXHandler()
+        gpx_data = handler.parse_gpx(file_path)
+        
+        if gpx_data is None:
+            return jsonify({'error': 'Invalid GPX file'}), 500
+        
+        return jsonify(gpx_data)
+        
+    except Exception as e:
+        logger.error(f"Error parsing GPX {file_id}: {str(e)}")
+        return jsonify({'error': f'Error processing GPX file: {str(e)}'}), 500

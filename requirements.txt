@@ -132,4 +132,4 @@ wsproto==1.2.0
 WTForms==3.2.1
 zope.event==5.1.1
 zope.interface==7.2
-zstandard==0.23.0
+zstandard==0.23.0gpxpy==1.6.2
