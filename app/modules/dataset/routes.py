@@ -48,9 +48,6 @@ ds_view_record_service = DSViewRecordService()
 def create_dataset():
     form = DataSetForm()
     if request.method == "POST":
-        logger.info(f"POST data received: {request.form.keys()}")
-        logger.info(f"Files received: {request.files.keys()}")
-        logger.info(f"Feature models count: {len(form.feature_models.entries)}")
 
         dataset = None
 

@@ -9,10 +9,9 @@ class AuthorForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     affiliation = StringField("Affiliation")
     orcid = StringField("ORCID")
-    gnd = StringField("GND")
 
     class Meta:
-        csrf = False  # disable CSRF because is subform
+        csrf = False
 
     def get_author(self):
         return {
@@ -22,8 +21,10 @@ class AuthorForm(FlaskForm):
         }
 
 
-class FeatureModelForm(FlaskForm):
-    filename = StringField("Filename", validators=[DataRequired()])  # antes: uvl_filename
+# ✅ NUEVO: Formulario base para feature models
+class BaseFeatureModelForm(FlaskForm):
+    """Formulario base común para todos los tipos de archivos."""
+    filename = StringField("Filename", validators=[DataRequired()])
     title = StringField("Title", validators=[Optional()])
     desc = TextAreaField("Description", validators=[Optional()])
     publication_type = SelectField(
@@ -32,36 +33,82 @@ class FeatureModelForm(FlaskForm):
         validators=[Optional()],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
-    tags = StringField("Tags (separated by commas)")
-    file_version = StringField("File version")  # antes: version
-    authors = FieldList(FormField(AuthorForm))
+    tags = StringField("Tags (separated by commas)", validators=[Optional()])
 
     class Meta:
-        csrf = False  # disable CSRF because is subform
-
-    def get_authors(self):
-        return [author.get_author() for author in self.authors]
+        csrf = False
 
     def get_fmmetadata(self):
         return {
-            "filename": self.filename.data,  
+            "filename": self.filename.data,
             "title": self.title.data,
             "description": self.desc.data,
             "publication_type": self.publication_type.data,
             "publication_doi": self.publication_doi.data,
             "tags": self.tags.data,
-            "file_version": self.file_version.data, 
         }
+
+    def get_authors(self):
+        return []  # Override en subclases si es necesario
+
+
+# ✅ NUEVO: Formulario específico para UVL
+class UVLFeatureModelForm(BaseFeatureModelForm):
+    """Formulario específico para archivos UVL."""
+    file_version = StringField("UVL Version", validators=[Optional()], default="1.0")
+    
+    class Meta:
+        csrf = False
+
+    def get_fmmetadata(self):
+        data = super().get_fmmetadata()
+        data["file_version"] = self.file_version.data or "1.0"
+        return data
+
+
+# ✅ NUEVO: Formulario específico para GPX
+class GPXFeatureModelForm(BaseFeatureModelForm):
+    """Formulario específico para archivos GPX."""
+    file_version = StringField("GPX Version", validators=[Optional()], default="1.1")
+    gpx_type = SelectField(
+        "Track Type",
+        choices=[
+            ("run", "Running"),
+            ("bike", "Cycling"),
+            ("hike", "Hiking"),
+            ("walk", "Walking"),
+            ("other", "Other"),
+        ],
+        validators=[Optional()],
+        default="other"
+    )
+    
+    class Meta:
+        csrf = False
+
+    def get_fmmetadata(self):
+        data = super().get_fmmetadata()
+        data["file_version"] = self.file_version.data or "1.1"
+        # Añadimos el tipo de track en las tags si no está vacío
+        if self.gpx_type.data and self.gpx_type.data != "other":
+            existing_tags = data.get("tags", "")
+            if existing_tags:
+                data["tags"] = f"{existing_tags}, {self.gpx_type.data}"
+            else:
+                data["tags"] = self.gpx_type.data
+        return data
+
+
+# ⚠️ DEPRECADO: Mantener por compatibilidad temporal
+class FeatureModelForm(BaseFeatureModelForm):
+    """Formulario genérico (deprecado, usar específicos)."""
+    file_version = StringField("File Version", validators=[Optional()])
+    
+    class Meta:
+        csrf = False
 
 
 class DataSetForm(FlaskForm):
-    # --- NUEVO: tipo del dataset (usado para dataset_kind) ---
-    dataset_type = SelectField(
-        "Dataset type",
-        choices=[("uvl", "UVL"), ("gpx", "GPX")],
-        validators=[Optional()],  # si no lo pones, se inferirá por extensión del primer archivo
-    )
-
     title = StringField("Title", validators=[DataRequired()])
     desc = TextAreaField("Description", validators=[DataRequired()])
     publication_type = SelectField(
@@ -71,30 +118,31 @@ class DataSetForm(FlaskForm):
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
-    tags = StringField("Tags (separated by commas)")
-    authors = FieldList(FormField(AuthorForm))
-    feature_models = FieldList(FormField(FeatureModelForm), min_entries=0)
-
-    submit = SubmitField("Submit")
+    tags = StringField("Tags (separated by commas)", validators=[Optional()])
+    
+    # Mantener feature_models genérico para compatibilidad
+    feature_models = FieldList(
+        FormField(FeatureModelForm), 
+        min_entries=0
+    )
+    
+    authors = FieldList(
+        FormField(AuthorForm),
+        min_entries=1,
+        validators=[DataRequired()],
+    )
+    
+    submit = SubmitField("Upload dataset")
 
     def get_dsmetadata(self):
-
-        publication_type_converted = self.convert_publication_type(self.publication_type.data)
-
         return {
             "title": self.title.data,
             "description": self.desc.data,
-            "publication_type": publication_type_converted,
+            "publication_type": self.publication_type.data,
             "publication_doi": self.publication_doi.data,
             "dataset_doi": self.dataset_doi.data,
             "tags": self.tags.data,
         }
 
-    def convert_publication_type(self, value):
-        for pt in PublicationType:
-            if pt.value == value:
-                return pt.name
-        return "NONE"
-
     def get_authors(self):
-        return [author.get_author() for author in self.authors]
+        return [author_form.get_author() for author_form in self.authors]

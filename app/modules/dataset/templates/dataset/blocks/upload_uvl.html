@@ -1,0 +1,34 @@
+<div class="card mb-4 border-success">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i data-feather="git-branch"></i>
+            UVL Feature Models
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">
+            Upload UVL (Universal Variability Language) feature model files. 
+            Supported version: 1.0 and above.
+        </p>
+        
+        <form action="/dataset/file/upload" 
+              class="dropzone dz-clickable" 
+              id="uvlDropzone">
+            <div class="dz-message">
+                <div class="dz-message-icon">
+                    <i data-feather="upload-cloud" style="width: 48px; height: 48px;"></i>
+                </div>
+                <div class="dz-message-text">
+                    <h6>Drop UVL files here or click to browse</h6>
+                    <span class="note">Allowed: <code>.uvl</code></span>
+                </div>
+            </div>
+        </form>
+
+        <!-- Lista de archivos subidos -->
+        <ul id="uvl-file-list" class="list-unstyled mt-3"></ul>
+        
+        <!-- Alertas -->
+        <div id="uvl-alerts"></div>
+    </div>
+</div>
