@@ -5,7 +5,15 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.dataset.models import (
+    Author,
+    BaseDataset,   # 👈 usar el mapper base para consultas polimórficas
+    DataSet,
+    DOIMapping,
+    DSMetaData,
+    DSDownloadRecord,
+    DSViewRecord,
+)
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -59,28 +67,33 @@ class DSViewRecordRepository(BaseRepository):
 
 class DataSetRepository(BaseRepository):
     def __init__(self):
-        super().__init__(DataSet)
+        # 👇 Usar BaseDataset para que el ORM devuelva la subclase correcta (uvl/gpx/base)
+        super().__init__(BaseDataset)
 
-    def get_synchronized(self, current_user_id: int) -> DataSet:
+    def get_synchronized(self, current_user_id: int):
         return (
             self.model.query.join(DSMetaData)
-            .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
+            .filter(BaseDataset.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
             .order_by(self.model.created_at.desc())
             .all()
         )
 
-    def get_unsynchronized(self, current_user_id: int) -> DataSet:
+    def get_unsynchronized(self, current_user_id: int):
         return (
             self.model.query.join(DSMetaData)
-            .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
+            .filter(BaseDataset.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
             .order_by(self.model.created_at.desc())
             .all()
         )
 
-    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int) -> DataSet:
+    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int):
         return (
             self.model.query.join(DSMetaData)
-            .filter(DataSet.user_id == current_user_id, DataSet.id == dataset_id, DSMetaData.dataset_doi.is_(None))
+            .filter(
+                BaseDataset.user_id == current_user_id,
+                BaseDataset.id == dataset_id,
+                DSMetaData.dataset_doi.is_(None),
+            )
             .first()
         )
 

@@ -48,6 +48,9 @@ ds_view_record_service = DSViewRecordService()
 def create_dataset():
     form = DataSetForm()
     if request.method == "POST":
+        logger.info(f"POST data received: {request.form.keys()}")
+        logger.info(f"Files received: {request.files.keys()}")
+        logger.info(f"Feature models count: {len(form.feature_models.entries)}")
 
         dataset = None
 
@@ -119,43 +122,56 @@ def list_dataset():
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload():
-    file = request.files["file"]
+    """
+    Endpoint unificado para subir archivos de cualquier tipo registrado.
+    Valida extensión y contenido según el tipo.
+    """
+    from werkzeug.utils import secure_filename
+    from app.modules.dataset.registry import get_allowed_extensions, infer_kind_from_filename, get_descriptor
+    import os
+
+    # 1. Verificar que hay archivo
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"message": "No file provided"}), 400
+
+    # 2. Validar extensión contra tipos registrados
+    allowed_exts = tuple(get_allowed_extensions())
+    filename = file.filename or ""
+    
+    if not any(filename.lower().endswith(ext) for ext in allowed_exts):
+        return jsonify({
+            "message": f"Invalid file type. Allowed: {', '.join(allowed_exts)}"
+        }), 400
+
+    # 3. Guardar en carpeta temporal del usuario
     temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
 
-    if not file or not file.filename.endswith(".uvl"):
-        return jsonify({"message": "No valid file"}), 400
+    new_filename = secure_filename(filename)
+    file_path = os.path.join(temp_folder, new_filename)
+    file.save(file_path)
 
-    # create temp folder
-    if not os.path.exists(temp_folder):
-        os.makedirs(temp_folder)
-
-    file_path = os.path.join(temp_folder, file.filename)
-
-    if os.path.exists(file_path):
-        # Generate unique filename (by recursion)
-        base_name, extension = os.path.splitext(file.filename)
-        i = 1
-        while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
-            i += 1
-        new_filename = f"{base_name} ({i}){extension}"
-        file_path = os.path.join(temp_folder, new_filename)
-    else:
-        new_filename = file.filename
-
+    # 4. Inferir tipo y validar contenido
+    kind = infer_kind_from_filename(new_filename)
+    descriptor = get_descriptor(kind)
+    
     try:
-        file.save(file_path)
+        descriptor.handler.validate(file_path)
     except Exception as e:
-        return jsonify({"message": str(e)}), 500
+        # Limpieza en caso de error
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        logger.error(f"Validation failed for {new_filename}: {e}")
+        return jsonify({"message": f"Validation failed: {str(e)}"}), 400
 
-    return (
-        jsonify(
-            {
-                "message": "UVL uploaded and validated successfully",
-                "filename": new_filename,
-            }
-        ),
-        200,
-    )
+    # 5. Respuesta exitosa
+    return jsonify({
+        "message": "File uploaded and validated successfully",
+        "filename": new_filename,
+        "file_type": kind,
+    }), 200
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
@@ -269,4 +285,4 @@ def get_unsynchronized_dataset(dataset_id):
     if not dataset:
         abort(404)
 
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    return render_template("dataset/view_dataset.html", dataset=dataset, FLASK_ENV=os.getenv("FLASK_ENV", "development"))

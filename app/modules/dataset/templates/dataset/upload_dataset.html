@@ -354,7 +354,7 @@
 
                                 formContainer.innerHTML = `
                                     <div class="row">
-                                        <input type="hidden" value="${response.filename}" name="feature_models-${formUniqueId}-uvl_filename">
+                                        <input type="hidden" value="${response.filename}" name="feature_models-${formUniqueId}-filename">
                                         <div class="col-12">
                                             <div class="row">
                                                 <div class="col-12">
@@ -410,7 +410,7 @@
                                                 <div class="col-6">
                                                     <div class="mb-3">
                                                         <label class="form-label">UVL version</label>
-                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-uvl_version">
+                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-file_version">
                                                     </div>
                                                 </div>
                                                 <div class="col-12">
@@ -446,6 +446,159 @@
                 </script>
 
             </div>
+            <!-- ========== GPX MODELS ========== -->
+            <h1 class="h3 mb-3 mt-2">GPX models</h1>
+
+            <div id="uploaded_gpx_form" style="padding-left: 2rem;">
+                <form action="{{ url_for('dataset.upload') }}" class="dropzone" id="gpxDropzone">
+                    <div id="gpx-dropzone-text"></div>
+                </form>
+
+                <span class="text-danger" id="gpx-alerts" style="display:none"></span>
+                <ul class="mt-2" id="gpx-file-list"></ul>
+            </div>
+
+            <script>
+            Dropzone.options.gpxDropzone = {
+                url: "/dataset/file/upload",
+                paramName: "file",
+                maxFilesize: 50, // MB
+                acceptedFiles: ".gpx",
+                init: function () {
+                    const dz = this;
+                    const fileList = document.getElementById("gpx-file-list");
+                    const alerts = document.getElementById("gpx-alerts");
+
+                    dz.on("addedfile", function (file) {
+                        const ext = (file.name.split(".").pop() || "").toLowerCase();
+                        if (ext !== "gpx") {
+                            dz.removeFile(file);
+                            const p = document.createElement("p");
+                            p.textContent = "Invalid file extension: " + file.name;
+                            alerts.appendChild(p);
+                            alerts.style.display = "block";
+                        }
+                    });
+
+                    dz.on("success", function (file, response) {
+                        if (typeof show_upload_dataset === "function") show_upload_dataset();
+
+                        const li = document.createElement("li");
+                        const h4 = document.createElement("h4");
+                        h4.textContent = response.filename;
+                        li.appendChild(h4);
+
+                        const id = generateIncrementalId();
+
+                        // === Botones ===
+                        const btnInfo = document.createElement("button");
+                        btnInfo.type = "button";
+                        btnInfo.textContent = "Show info";
+                        btnInfo.classList.add("info-button", "btn", "btn-outline-secondary", "btn-sm");
+                        btnInfo.style.borderRadius = "5px";
+
+                        const btnDel = document.createElement("button");
+                        btnDel.type = "button";
+                        btnDel.textContent = "Delete model";
+                        btnDel.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm");
+                        btnDel.style.borderRadius = "5px";
+
+                        li.appendChild(document.createTextNode(" "));
+                        li.appendChild(btnInfo);
+                        li.appendChild(document.createTextNode(" "));
+                        li.appendChild(btnDel);
+
+                        // === Formulario oculto GPX ===
+                        const form = document.createElement("div");
+                        form.classList.add("gpx_form", "mt-3");
+                        form.style.display = "none";
+                        form.innerHTML = `
+                            <div class="row">
+                                <<input type="hidden" name="feature_models-${id}-filename" value="${response.filename}">
+                                <div class="col-12">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label class="form-label">Title</label>
+                                                <input type="text" class="form-control" name="feature_models-${id}-title" value="${response.filename.replace('.gpx','')}">
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label class="form-label">Description</label>
+                                                <textarea rows="4" class="form-control" name="feature_models-${id}-desc"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-12">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="publication_type">Publication type</label>
+                                                <select class="form-control" name="feature_models-${id}-publication_type">
+                                                    <option value="none" selected>None</option>
+                                                    <option value="article">Journal Article</option>
+                                                    <option value="report">Report</option>
+                                                    <option value="book">Book</option>
+                                                    <option value="thesis">Thesis</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-12">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="publication_doi">Publication DOI</label>
+                                                <input class="form-control" name="feature_models-${id}-publication_doi" type="text" value="">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Tags (separated by commas)</label>
+                                                <input type="text" class="form-control" name="feature_models-${id}-tags">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">GPX version</label>
+                                                <input type="text" class="form-control" name="feature_models-${id}-file_version">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        // Mostrar/ocultar info
+                        btnInfo.addEventListener("click", function () {
+                            const visible = form.style.display !== "none";
+                            form.style.display = visible ? "none" : "block";
+                            btnInfo.textContent = visible ? "Show info" : "Hide info";
+                        });
+
+                        // Borrar archivo
+                        btnDel.addEventListener("click", function () {
+                            fileList.removeChild(li);
+                            dz.removeFile(file);
+                            fetch("/dataset/file/delete", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ file: response.filename }),
+                            }).catch(() => {});
+                        });
+
+                        li.appendChild(form);
+                        fileList.appendChild(li);
+                    });
+
+                    dz.on("error", function (file, response) {
+                        console.error("Error uploading file: ", response);
+                        const p = document.createElement("p");
+                        p.textContent = "File not valid: " + file.name;
+                        alerts.appendChild(p);
+                        alerts.style.display = "block";
+                    });
+                }
+            };
+            </script>
+            <!-- ========== /GPX MODELS ========== -->
+
         </div>
 
     </div>

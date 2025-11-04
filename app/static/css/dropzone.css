@@ -1,49 +1,51 @@
-#myDropzone {
-    min-height: auto;
-    border: 2px dashed #ccc;
-    border-radius:10px;
-    padding: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+/* Caja dropzone */
+#myDropzone, #gpxDropzone {
+  min-height: auto;
+  border: 2px dashed #ccc;
+  border-radius:10px;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  position: relative; /* por consistencia */
 }
 
-#myDropzone .dz-preview {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 10px;
-    width: 150px;
+/* Previews */
+#myDropzone .dz-preview, #gpxDropzone .dz-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
+  width: 150px;
 }
 
-#myDropzone .dz-preview .dz-details {
-    text-align: center;
-    padding: 5px;
+#myDropzone .dz-preview .dz-details, #gpxDropzone .dz-preview .dz-details {
+  text-align: center;
+  padding: 5px;
 }
 
-#dropzone-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
+/* Mensaje centrado (usa 2 IDs para evitar duplicar el mismo id en DOM) */
+#dropzone-text, #gpx-dropzone-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
 }
 
-#file-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+/* Listas de archivos */
+#file-list, #gpx-file-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
-#file-list li {
-    margin-bottom: 10px;
-    padding: 10px;
-    background-color: #F4F7FB;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+#file-list li, #gpx-file-list li {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #F4F7FB;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
-
-.remove-button {
-    margin-left: 10px;
-}
+.remove-button { margin-left: 10px; }
