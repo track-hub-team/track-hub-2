@@ -1,0 +1,14 @@
+name: Deploy to Render (production)
+
+on:
+  workflow_run:
+    workflows: ["Publish image in Docker Hub on release"]
+    types: [completed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Redeploy on Render
+        run: curl -fsSL "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
