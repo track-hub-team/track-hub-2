@@ -4,7 +4,7 @@ from flask import request
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.dataset.models import DataSet
+from app.modules.dataset.models import BaseDataset
 
 
 class Hubfile(db.Model):
@@ -25,12 +25,12 @@ class Hubfile(db.Model):
 
         return HubfileService().get_owner_user_by_hubfile(self)
 
-    def get_dataset(self) -> DataSet:
+    def get_dataset(self) -> BaseDataset:
         from app.modules.hubfile.services import HubfileService
 
         return HubfileService().get_dataset_by_hubfile(self)
 
-    def get_path(self) -> DataSet:
+    def get_path(self) -> BaseDataset:
         from app.modules.hubfile.services import HubfileService
 
         return HubfileService().get_path_by_hubfile(self)

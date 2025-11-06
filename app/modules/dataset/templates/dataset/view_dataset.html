@@ -36,14 +36,60 @@
         <!-- ========================================= -->
         <div class="card">
             <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <h1><b>{{ dataset.ds_meta_data.title }}</b></h1>
+                <!-- ✅ Header con versiones y botones -->
+                <div class="d-flex align-items-start justify-content-between mb-3">
                     <div>
-                        <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
-                        <!-- ✅ Mostrar tipo de dataset -->
-                        <span class="badge bg-info">{{ dataset.dataset_kind|upper }}</span>
+                        <h1 class="mb-2"><b>{{ dataset.ds_meta_data.title }}</b></h1>
+                        <div>
+                            <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
+                            <span class="badge bg-info">{{ dataset.dataset_kind|upper }}</span>
+                            
+                            <!-- ✅ Badge: Número de versiones -->
+                            {% if dataset.get_version_count() > 0 %}
+                            <span class="badge bg-success">
+                                <i data-feather="git-branch" style="width: 14px; height: 14px;"></i> 
+                                {{ dataset.get_version_count() }} version(s)
+                            </span>
+                            {% endif %}
+                            
+                            <!-- ✅ Badge: Versión actual -->
+                            {% set latest_version = dataset.get_latest_version() %}
+                            {% if latest_version %}
+                            <span class="badge bg-primary">
+                                <i data-feather="tag" style="width: 14px; height: 14px;"></i>
+                                v{{ latest_version.version_number }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- ✅ Botones de acción -->
+                    <div class="btn-group" role="group">
+                        <!-- Ver historial (todos pueden verlo si tiene versiones) -->
+                        {% if dataset.get_version_count() > 0 %}
+                        <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i data-feather="clock"></i> Version History
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Editar (solo propietario) -->
+                        {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
+                        <a href="{{ url_for('dataset.edit_dataset', dataset_id=dataset.id) }}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i data-feather="edit"></i> Edit
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Crear versión (solo propietario de datasets NO sincronizados) -->
+                        {% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createVersionModal">
+                            <i data-feather="plus"></i> New Version
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
+                
                 <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
                 <div class="row mb-4">
@@ -255,6 +301,64 @@
 
 <!-- Modals comunes -->
 {% include 'dataset/partials/file_viewer_modal.html' %}
+
+<!-- ✅ Modal para crear versión (solo si NO está sincronizado) -->
+{% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
+<div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('dataset.create_version', dataset_id=dataset.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createVersionModalLabel">
+                        <i data-feather="git-branch"></i> Create New Version
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i data-feather="info"></i>
+                        <small>A snapshot of the current state will be saved.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Version Type</label>
+                        <select class="form-select" name="bump_type" id="bump_type">
+                            <option value="patch" selected>🔧 Patch (X.Y.Z+1) - Bug fixes, small changes</option>
+                            <option value="minor">✨ Minor (X.Y+1.0) - New features, compatible changes</option>
+                            <option value="major">🚀 Major (X+1.0.0) - Breaking changes, major updates</option>
+                        </select>
+                        <small class="text-muted">
+                            {% if latest_version %}
+                            Current version: <strong>v{{ latest_version.version_number }}</strong>
+                            {% else %}
+                            This will be the first version: <strong>v0.0.1</strong>
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="changelog" class="form-label">Changelog <span class="text-danger">*</span></label>
+                        <textarea 
+                            class="form-control" 
+                            id="changelog" 
+                            name="changelog" 
+                            rows="4" 
+                            required
+                            placeholder="Describe what changed...&#10;&#10;Example:&#10;- Added 2 new tracks&#10;- Updated metadata&#10;- Fixed elevation data"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-feather="save"></i> Create Version
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 

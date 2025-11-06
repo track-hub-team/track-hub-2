@@ -6,9 +6,11 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
+from app import db
 
 from flask import (
     abort,
+    flash,
     jsonify,
     make_response,
     redirect,
@@ -21,7 +23,7 @@ from flask_login import current_user, login_required
 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
-from app.modules.dataset.models import DSDownloadRecord
+from app.modules.dataset.models import BaseDataset, DSDownloadRecord, DatasetVersion
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -29,8 +31,11 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
+    calculate_checksum_and_size,
 )
 from app.modules.zenodo.services import ZenodoService
+from app.modules.dataset.services import VersionService
+
 
 logger = logging.getLogger(__name__)
 
@@ -360,3 +365,245 @@ def get_gpx_data(file_id):
     except Exception as e:
         logger.error(f"Error parsing GPX {file_id}: {str(e)}")
         return jsonify({'error': f'Error processing GPX file: {str(e)}'}), 500
+    
+@dataset_bp.route('/dataset/<int:dataset_id>/versions')
+def list_versions(dataset_id):
+    """Ver historial de versiones de un dataset"""
+    dataset = BaseDataset.query.get_or_404(dataset_id)
+    
+    versions = dataset.versions.order_by(DatasetVersion.created_at.desc()).all()
+    
+    return render_template(
+        'dataset/list_versions.html',
+        dataset=dataset,
+        versions=versions
+    )
+
+
+# Línea ~390-415
+
+@dataset_bp.route('/versions/<int:version1_id>/compare/<int:version2_id>')
+def compare_versions(version1_id, version2_id):
+    """Comparar dos versiones de un dataset"""
+    version1 = DatasetVersion.query.get_or_404(version1_id)
+    version2 = DatasetVersion.query.get_or_404(version2_id)
+    
+    # Verificar que pertenecen al mismo dataset
+    if version1.dataset_id != version2.dataset_id:
+        flash('Versions must belong to the same dataset', 'danger')
+        abort(400)
+    
+    # ✅ Obtener el dataset y todas sus versiones ordenadas
+    dataset = version1.dataset
+    all_versions = DatasetVersion.query.filter_by(
+        dataset_id=dataset.id
+    ).order_by(DatasetVersion.created_at.desc()).all()
+    
+    # Asegurar orden cronológico (más reciente primero)
+    if version1.created_at < version2.created_at:
+        version1, version2 = version2, version1
+    
+    # Comparar versiones
+    comparison = VersionService.compare_versions(version1.id, version2.id)
+    
+    return render_template(
+        'dataset/compare_versions.html',
+        dataset=dataset,
+        version1=version1,
+        version2=version2,
+        comparison=comparison,
+        all_versions=all_versions  
+    )
+
+
+@dataset_bp.route('/dataset/<int:dataset_id>/create_version', methods=['POST'])
+@login_required
+def create_version(dataset_id):
+    """Crear una nueva versión (solo propietario y datasets NO sincronizados)"""
+    dataset = BaseDataset.query.get_or_404(dataset_id)
+    
+    # ✅ Solo el propietario puede crear versiones
+    if dataset.user_id != current_user.id:
+        abort(403)
+    
+    # ✅ NO permitir crear versiones en datasets sincronizados
+    if dataset.ds_meta_data.dataset_doi:
+        flash('Cannot create versions for synchronized datasets. Unsynchronize first.', 'warning')
+        return redirect(url_for('dataset.list_versions', dataset_id=dataset_id))
+    
+    changelog = request.form.get('changelog', '').strip()
+    bump_type = request.form.get('bump_type', 'patch')
+    
+    if not changelog:
+        flash('Changelog is required', 'warning')
+        return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset_id))
+    
+    if bump_type not in ['major', 'minor', 'patch']:
+        bump_type = 'patch'
+    
+    try:
+        version = VersionService.create_version(dataset, changelog, current_user, bump_type)
+        flash(f'Version {version.version_number} created successfully! 🎉', 'success')
+    except Exception as e:
+        flash(f'Error creating version: {str(e)}', 'danger')
+        logger.error(f"Error creating version for dataset {dataset_id}: {str(e)}")
+    
+    return redirect(url_for('dataset.list_versions', dataset_id=dataset_id))
+
+
+@dataset_bp.route('/api/dataset/<int:dataset_id>/versions')
+def api_list_versions(dataset_id):
+    """API para obtener versiones de un dataset (JSON)"""
+    dataset = BaseDataset.query.get_or_404(dataset_id)
+    
+    versions = [v.to_dict() for v in dataset.versions.all()]
+    
+    return jsonify({
+        'dataset_id': dataset_id,
+        'version_count': len(versions),
+        'versions': versions
+    })
+
+@dataset_bp.route('/dataset/<int:dataset_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_dataset(dataset_id):
+    """Editar un dataset (synchronized o unsynchronized)"""
+    dataset = BaseDataset.query.get_or_404(dataset_id)
+    
+    # Solo el propietario puede editar
+    if dataset.user_id != current_user.id:
+        abort(403)
+    
+    # Si es POST, procesar cambios
+    if request.method == 'POST':
+        changes = []
+        
+        # 1. Actualizar título
+        new_title = request.form.get('title', '').strip()
+        if new_title and new_title != dataset.ds_meta_data.title:
+            old_title = dataset.ds_meta_data.title
+            dataset.ds_meta_data.title = new_title
+            changes.append(f"Changed title from '{old_title}' to '{new_title}'")
+        
+        # 2. Actualizar descripción
+        new_description = request.form.get('description', '').strip()
+        if new_description and new_description != dataset.ds_meta_data.description:
+            dataset.ds_meta_data.description = new_description
+            changes.append("Updated description")
+        
+        # 3. Actualizar tags
+        new_tags = request.form.get('tags', '').strip()
+        if new_tags != (dataset.ds_meta_data.tags or ''):
+            dataset.ds_meta_data.tags = new_tags
+            changes.append("Updated tags")
+        
+        # 4. Subir nuevos archivos
+        uploaded_files = request.files.getlist('files')
+        if uploaded_files and uploaded_files[0].filename:
+            from werkzeug.utils import secure_filename
+            from app.modules.dataset.registry import infer_kind_from_filename, get_descriptor
+            
+            for file in uploaded_files:
+                if not file.filename:
+                    continue
+                
+                filename = secure_filename(file.filename)
+                
+                # Validar que el tipo coincida con el dataset
+                file_kind = infer_kind_from_filename(filename)
+                if file_kind != dataset.dataset_kind:
+                    flash(f'File type mismatch: {filename} is {file_kind.upper()} but dataset is {dataset.dataset_kind.upper()}', 'danger')
+                    continue
+                
+                # Guardar archivo
+                working_dir = os.getenv("WORKING_DIR", "")
+                dest_dir = os.path.join(
+                    working_dir,
+                    "uploads",
+                    f"user_{current_user.id}",
+                    f"dataset_{dataset.id}"
+                )
+                os.makedirs(dest_dir, exist_ok=True)
+                
+                file_path = os.path.join(dest_dir, filename)
+                file.save(file_path)
+                
+                # Validar archivo
+                descriptor = get_descriptor(file_kind)
+                
+                try:
+                    descriptor.handler.validate(file_path)
+                except Exception as e:
+                    os.remove(file_path)
+                    flash(f'File validation failed for {filename}: {str(e)}', 'danger')
+                    continue
+                
+                # ✅ FIX: Crear FMMetaData con publication_type obligatorio
+                from app.modules.featuremodel.repositories import FMMetaDataRepository, FeatureModelRepository
+                from app.modules.hubfile.repositories import HubfileRepository
+                
+                fmmetadata = FMMetaDataRepository().create(
+                    commit=False,
+                    filename=filename,
+                    title=filename,
+                    description=f"Added via edit",
+                    publication_type="none"  # ✅ Valor por defecto obligatorio
+                )
+                
+                fm = FeatureModelRepository().create(
+                    commit=False,
+                    data_set_id=dataset.id,
+                    fm_meta_data_id=fmmetadata.id
+                )
+                
+                checksum, size = calculate_checksum_and_size(file_path)
+                
+                HubfileRepository().create(
+                    commit=False,
+                    name=filename,
+                    checksum=checksum,
+                    size=size,
+                    feature_model_id=fm.id
+                )
+                
+                changes.append(f"Added file: {filename}")
+        
+        # Guardar cambios
+        if changes:
+            try:
+                db.session.commit()
+                
+                # ✅ AUTO-VERSIONADO: Crear nueva versión automáticamente
+                if not dataset.ds_meta_data.dataset_doi:  # Solo si NO está sincronizado
+                    try:
+                        changelog = "Automatic version after edit:\n" + "\n".join(f"- {c}" for c in changes)
+                        
+                        version = VersionService.create_version(
+                            dataset=dataset,
+                            changelog=changelog,
+                            user=current_user,
+                            bump_type='patch'
+                        )
+                        
+                        flash(f'Dataset updated successfully! New version: v{version.version_number} 🎉', 'success')
+                    except Exception as e:
+                        logger.error(f"Could not create automatic version: {str(e)}")
+                        flash('Dataset updated but version creation failed', 'warning')
+                else:
+                    flash('Dataset updated successfully! ✅', 'success')
+                
+                # Redirigir según tipo
+                if dataset.ds_meta_data.dataset_doi:
+                    return redirect(url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi))
+                else:
+                    return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id))
+                    
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Error updating dataset {dataset_id}: {str(e)}")
+                flash(f'Error updating dataset: {str(e)}', 'danger')
+        else:
+            flash('No changes detected', 'info')
+    
+    # GET: Mostrar formulario
+    return render_template('dataset/edit_dataset.html', dataset=dataset)

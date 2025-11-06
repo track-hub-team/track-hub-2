@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask import Response, jsonify
 from flask_login import current_user
 
-from app.modules.dataset.models import DataSet
+from app.modules.dataset.models import BaseDataset
 from app.modules.featuremodel.models import FeatureModel
 from app.modules.zenodo.repositories import ZenodoRepository
 from core.configuration.configuration import uploads_folder_name
@@ -132,7 +132,7 @@ class ZenodoService(BaseService):
             raise Exception("Failed to get depositions")
         return response.json()
 
-    def create_new_deposition(self, dataset: DataSet) -> dict:
+    def create_new_deposition(self, dataset: BaseDataset) -> dict:
         """
         Create a new deposition in Zenodo.
 
@@ -178,7 +178,7 @@ class ZenodoService(BaseService):
             raise Exception(error_message)
         return response.json()
 
-    def upload_file(self, dataset: DataSet, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
+    def upload_file(self, dataset: BaseDataset, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
         """
         Upload a file to a deposition in Zenodo.
 

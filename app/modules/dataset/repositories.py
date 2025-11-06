@@ -8,7 +8,6 @@ from sqlalchemy import desc, func
 from app.modules.dataset.models import (
     Author,
     BaseDataset,   # 👈 usar el mapper base para consultas polimórficas
-    DataSet,
     DOIMapping,
     DSMetaData,
     DSDownloadRecord,
@@ -49,14 +48,14 @@ class DSViewRecordRepository(BaseRepository):
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0
 
-    def the_record_exists(self, dataset: DataSet, user_cookie: str):
+    def the_record_exists(self, dataset: BaseDataset, user_cookie: str):
         return self.model.query.filter_by(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
             view_cookie=user_cookie,
         ).first()
 
-    def create_new_record(self, dataset: DataSet, user_cookie: str) -> DSViewRecord:
+    def create_new_record(self, dataset: BaseDataset, user_cookie: str) -> DSViewRecord:
         return self.create(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
