@@ -2,14 +2,15 @@ import hashlib
 import os
 import time
 import uuid
+from typing import Any
 
 from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-DEPOSITIONS = {}
-CONCEPTS = {}
+DEPOSITIONS: dict[int, dict[str, Any]] = {}
+CONCEPTS: dict[str, list[int]] = {}
 FILES_DIR = os.environ.get("FAKENODO_FILES_DIR", "./_fakenodo_files")
 os.makedirs(FILES_DIR, exist_ok=True)
 
