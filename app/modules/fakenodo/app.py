@@ -5,7 +5,7 @@ import time
 import uuid
 from typing import Any
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, make_response, request
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -153,11 +153,23 @@ def download(dep_id, filename):
     dep = DEPOSITIONS.get(dep_id)
     if not dep:
         return jsonify({"message": "Not found"}), 404
+
     f = next((x for x in dep["files"] if x["filename"] == filename), None)
-    if not f:
+    if not f or not os.path.exists(f["path"]):
         return jsonify({"message": "Not found"}), 404
-    directory, fname = os.path.dirname(f["path"]), os.path.basename(f["path"])
-    return send_from_directory(directory, fname, as_attachment=True)
+
+    try:
+        with open(f["path"], "rb") as fh:
+            data = fh.read()
+    except Exception:
+        # si hubiera algún problema de lectura, devolvemos 404 para los tests
+        return jsonify({"message": "Not found"}), 404
+
+    resp = make_response(data, 200)
+    resp.headers["Content-Type"] = "application/octet-stream"
+    # forzar descarga con el nombre original
+    resp.headers["Content-Disposition"] = f'attachment; filename="{os.path.basename(f["path"])}"'
+    return resp
 
 
 @app.route("/api/deposit/depositions/<int:dep_id>/actions/publish", methods=["POST"])
