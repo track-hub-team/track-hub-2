@@ -170,10 +170,39 @@ def publish(dep_id):
     cur_fp = dep.get("files_fp", "")
     changed_files = cur_fp != prev_fp
 
-    if changed_files or dep.get("doi") is None:
-        dep["doi"] = make_doi(dep["conceptrecid"], dep["version"])
+    # Caso 1: primera publicación (aún no tiene DOI)
+    if dep.get("doi") is None:
+        dep["doi"] = make_doi(dep["conceptrecid"], dep["version"])  # v1
         dep["published_files_fp"] = cur_fp
+        dep["state"] = "done"
+        dep["modified"] = now_iso()
+        return jsonify(serialize(dep)), 202
 
+    # Caso 2: ya estaba publicado y SÍ han cambiado los ficheros => nueva versión / nuevo DOI
+    if changed_files:
+        new_dep_id = new_id()
+        new_version = dep["version"] + 1
+
+        # Clonamos lo esencial; reusamos paths de ficheros (suficiente para fake)
+        new_dep = {
+            "id": new_dep_id,
+            "conceptrecid": dep["conceptrecid"],
+            "created": now_iso(),
+            "modified": now_iso(),
+            "metadata": dict(dep["metadata"]),
+            "state": "done",
+            "files": list(dep["files"]),  # mismas referencias de fichero
+            "files_fp": dep["files_fp"],
+            "published_files_fp": dep["files_fp"],
+            "version": new_version,
+            "conceptdoi": dep["conceptdoi"],
+            "doi": make_doi(dep["conceptrecid"], new_version),
+        }
+        DEPOSITIONS[new_dep_id] = new_dep
+        CONCEPTS.setdefault(dep["conceptrecid"], []).append(new_dep_id)
+        return jsonify(serialize(new_dep)), 202
+
+    # Caso 3: ya publicado y NO han cambiado los ficheros => no hay nueva versión/DOI
     dep["state"] = "done"
     dep["modified"] = now_iso()
     return jsonify(serialize(dep)), 202
@@ -182,7 +211,9 @@ def publish(dep_id):
 @app.route("/api/records/<conceptid>/versions", methods=["GET"])
 def list_versions(conceptid):
     ids = CONCEPTS.get(conceptid, [])
-    return jsonify([serialize(DEPOSITIONS[i]) for i in ids]), 200
+    # Ordenamos por número de versión ascendente para que sea más claro
+    ordered = sorted((DEPOSITIONS[i] for i in ids), key=lambda d: d["version"])
+    return jsonify([serialize(d) for d in ordered]), 200
 
 
 if __name__ == "__main__":
