@@ -62,10 +62,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0 
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+      - name: Download coverage artifact from tests workflow
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: CI_pytest.yml
+          name: coverage-reports
+          path: .
+          if_no_artifact_found: warn
+        continue-on-error: true
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONARCLOUD }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
