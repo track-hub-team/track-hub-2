@@ -1,3 +1,4 @@
+# app/modules/fakenodo/app.py
 import hashlib
 import os
 import time
@@ -9,8 +10,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-DEPOSITIONS: dict[int, dict[str, Any]] = {}
-CONCEPTS: dict[str, list[int]] = {}
+DEPOSITIONS: dict[str, dict[str, Any]] = {}
+CONCEPTS: dict[str, dict[str, Any]] = {}
 FILES_DIR = os.environ.get("FAKENODO_FILES_DIR", "./_fakenodo_files")
 os.makedirs(FILES_DIR, exist_ok=True)
 

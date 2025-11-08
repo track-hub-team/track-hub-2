@@ -23,7 +23,7 @@ repos:
         name: Protect main and trunk branches
         description: Prevent direct commits to main and trunk (merges are allowed)
         args: ['--branch', 'main', '--branch', 'trunk']
-        stages: [commit]  # Solo en commit, para que no de problemas con los push tras merge
+        stages: [pre-commit]  # Solo en commit, para que no de problemas con los push tras merge
   # Black - formateo de código Python
   - repo: https://github.com/psf/black
     rev: 24.1.1
