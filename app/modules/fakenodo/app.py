@@ -1,22 +1,34 @@
-from flask import Flask, request, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
-import os
-import uuid
-import time
 import hashlib
+import os
+import time
+import uuid
+from typing import Any
+
+from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-DEPOSITIONS = {}
-CONCEPTS = {}
+DEPOSITIONS: dict[int, dict[str, Any]] = {}
+CONCEPTS: dict[str, list[int]] = {}
 FILES_DIR = os.environ.get("FAKENODO_FILES_DIR", "./_fakenodo_files")
 os.makedirs(FILES_DIR, exist_ok=True)
 
 
-def now_iso(): return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-def new_id(): return (max(DEPOSITIONS) + 1) if DEPOSITIONS else 1
-def new_concept_id(): return str(uuid.uuid4())[:8]
-def make_doi(concept, version): return f"10.9999/fakenodo.{concept}.v{version}"
+def now_iso():
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def new_id():
+    return (max(DEPOSITIONS) + 1) if DEPOSITIONS else 1
+
+
+def new_concept_id():
+    return str(uuid.uuid4())[:8]
+
+
+def make_doi(concept, version):
+    return f"10.9999/fakenodo.{concept}.v{version}"
 
 
 def files_fingerprint(files):
@@ -35,12 +47,12 @@ def serialize(dep):
         "created": dep["created"],
         "modified": dep["modified"],
         "metadata": dep["metadata"],
-        "state": dep["state"],              # "draft" | "done"
+        "state": dep["state"],  # "draft" | "done"
         "files": [{"filename": f["filename"], "filesize": f["size"]} for f in dep["files"]],
         "version": dep["version"],
         "conceptdoi": dep["conceptdoi"],
         "doi": dep.get("doi"),
-        "links": {"self": f"/api/deposit/depositions/{dep['id']}"}
+        "links": {"self": f"/api/deposit/depositions/{dep['id']}"},
     }
 
 
@@ -62,7 +74,7 @@ def create_deposition():
         "metadata": payload.get("metadata") or {},
         "state": "draft",
         "files": [],
-        "files_fp": "",     # fingerprint para saber si cambió el set de ficheros
+        "files_fp": "",  # fingerprint para saber si cambió el set de ficheros
         "version": 1,
         "conceptdoi": f"10.9999/fakenodo.{conceptrecid}",
         # "doi": solo si publicado
@@ -123,8 +135,16 @@ def upload_file(dep_id):
     dep["files"].append({"filename": filename, "size": size, "path": save_path})
     dep["files_fp"] = files_fingerprint(dep["files"])
     dep["modified"] = now_iso()
-    return jsonify({"filename": filename, "filesize": size,
-                    "links": {"download": f"/api/deposit/depositions/{dep_id}/files/{filename}"}}), 201
+    return (
+        jsonify(
+            {
+                "filename": filename,
+                "filesize": size,
+                "links": {"download": f"/api/deposit/depositions/{dep_id}/files/{filename}"},
+            }
+        ),
+        201,
+    )
 
 
 @app.route("/api/deposit/depositions/<int:dep_id>/files/<path:filename>", methods=["GET"])
@@ -147,7 +167,7 @@ def publish(dep_id):
 
     prev_fp = dep.get("published_files_fp", "")
     cur_fp = dep.get("files_fp", "")
-    changed_files = (cur_fp != prev_fp)
+    changed_files = cur_fp != prev_fp
 
     if changed_files or dep.get("doi") is None:
         dep["doi"] = make_doi(dep["conceptrecid"], dep["version"])

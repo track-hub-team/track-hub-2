@@ -1,14 +1,14 @@
 # fakenodo/test_fakenodo_integration.py
 import os
+import shutil
 import subprocess
 import sys
-import time
 import tempfile
-import shutil
-import requests
-import pytest
+import time
 from pathlib import Path
 
+import pytest
+import requests
 
 FAKENODO_PORT = 5001
 FAKENODO_BASE = f"http://localhost:{FAKENODO_PORT}"
@@ -40,7 +40,7 @@ def fakenodo_server():
     env["FAKENODO_FILES_DIR"] = tmpdir
 
     test_dir = Path(__file__).resolve().parent
-    app_path = test_dir.parent / "app.py"   # app/modules/fakenodo/app.py
+    app_path = test_dir.parent / "app.py"  # app/modules/fakenodo/app.py
 
     if not app_path.exists():
         pytest.skip(f"{app_path} no existe. Crea el microservicio antes de ejecutar estos tests.")

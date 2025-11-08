@@ -1,13 +1,13 @@
 import os
+import shutil
 import subprocess
 import sys
-import time
 import tempfile
-import shutil
+import time
 from pathlib import Path
 
-import requests
 import pytest
+import requests
 from flask import Flask
 
 from app.modules.zenodo.services import ZenodoService
@@ -42,7 +42,7 @@ def fakenodo_server():
     env["FAKENODO_FILES_DIR"] = tmpdir
 
     test_dir = Path(__file__).resolve().parent
-    app_path = test_dir.parent / "app.py"   # app/modules/fakenodo/app.py
+    app_path = test_dir.parent / "app.py"  # app/modules/fakenodo/app.py
     if not app_path.exists():
         pytest.skip(f"{app_path} no existe. Crea el microservicio antes de ejecutar estos tests.")
 

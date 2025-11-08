@@ -1,8 +1,9 @@
-from flask import render_template
-from flask import jsonify
 import os
 import tempfile
+
 import requests
+from flask import jsonify, render_template
+
 from app.modules.zenodo import zenodo_bp
 from app.modules.zenodo.services import ZenodoService
 
@@ -34,15 +35,17 @@ def zenodo_demo():
     dep_id = None
 
     def add_step(name, method, url, status, payload=None, error=None):
-        steps.append({
-            "name": name,
-            "method": method,
-            "url": url,
-            "status": status,
-            "ok": 200 <= status < 300 or status in (201, 202, 204),
-            "payload": payload,
-            "error": error
-        })
+        steps.append(
+            {
+                "name": name,
+                "method": method,
+                "url": url,
+                "status": status,
+                "ok": 200 <= status < 300 or status in (201, 202, 204),
+                "payload": payload,
+                "error": error,
+            }
+        )
 
     try:
         # 1) Crear
@@ -75,8 +78,9 @@ def zenodo_demo():
         with open(tmpfile, "w") as fh:
             fh.write("Contenido de prueba para la demo visual de Fakenodo.")
         with open(tmpfile, "rb") as fh:
-            r = requests.post(files_url, params=params, data={"name": "uvlhub_demo.txt"},
-                              files={"file": fh}, timeout=60)
+            r = requests.post(
+                files_url, params=params, data={"name": "uvlhub_demo.txt"}, files={"file": fh}, timeout=60
+            )
         add_step("upload_file", "POST", files_url, r.status_code, r.json() if r.ok else r.text)
         if r.status_code != 201:
             success = False
@@ -98,7 +102,6 @@ def zenodo_demo():
         # 5) Eliminar (si se creó)
         if dep_id:
             r = requests.delete(f"{base}/{dep_id}", params=params, timeout=30)
-            add_step("delete", "DELETE", f"{base}/{dep_id}", r.status_code,
-                     None if r.status_code == 204 else r.text)
+            add_step("delete", "DELETE", f"{base}/{dep_id}", r.status_code, None if r.status_code == 204 else r.text)
 
     return jsonify({"success": success, "steps": steps})
