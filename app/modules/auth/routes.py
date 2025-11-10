@@ -1,10 +1,12 @@
-from flask import redirect, render_template, request, url_for
+from flask import current_app, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, logout_user
 
 from app.modules.auth import auth_bp
 from app.modules.auth.forms import LoginForm, SignupForm
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
+
+from app.modules.email.email import send_email
 
 authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
@@ -25,6 +27,11 @@ def show_signup_form():
             user = authentication_service.create_with_profile(**form.data)
         except Exception as exc:
             return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
+
+        try:
+            send_email(user.email, 'Bienvenido a Track-Hub', 'register', user=user)
+        except Exception as e:
+            current_app.logger.error(f"Error sending registration email: {e}")
 
         # Log user
         login_user(user, remember=True)
