@@ -1,0 +1,3 @@
+Bienvenido a Track-Hub, {{ user.username }}!
+
+Gracias por registrarte.
