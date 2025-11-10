@@ -1,8 +1,8 @@
-"""first migration
+"""baseline schema
 
-Revision ID: 001
+Revision ID: d7b09b5319d5
 Revises: 
-Create Date: 2024-09-08 16:50:20.326640
+Create Date: 2025-11-03 18:23:58.859871
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '001'
+revision = 'd7b09b5319d5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,10 +44,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
-    op.create_table('webhook',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('zenodo',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -76,6 +72,14 @@ def upgrade():
     sa.Column('uvl_version', sa.String(length=120), nullable=True),
     sa.Column('fm_metrics_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['fm_metrics_id'], ['fm_metrics.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('notepad',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=256), nullable=False),
+    sa.Column('body', sa.Text(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user_profile',
@@ -180,10 +184,10 @@ def downgrade():
     op.drop_table('data_set')
     op.drop_table('author')
     op.drop_table('user_profile')
+    op.drop_table('notepad')
     op.drop_table('fm_meta_data')
     op.drop_table('ds_meta_data')
     op.drop_table('zenodo')
-    op.drop_table('webhook')
     op.drop_table('user')
     op.drop_table('fm_metrics')
     op.drop_table('ds_metrics')

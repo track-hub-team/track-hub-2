@@ -1,0 +1,236 @@
+{% extends "base_template.html" %}
+
+{% block title %}Version History - {{ dataset.ds_meta_data.title }}{% endblock %}
+
+{% block content %}
+
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/explore">Explore</a></li>
+                    <li class="breadcrumb-item">
+                        {% if dataset.ds_meta_data.dataset_doi %}
+                            <a href="{{ dataset.get_uvlhub_doi() }}">{{ dataset.ds_meta_data.title }}</a>
+                        {% else %}
+                            <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id) }}">{{ dataset.ds_meta_data.title }}</a>
+                        {% endif %}
+                    </li>
+                    <li class="breadcrumb-item active">Versions</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3">
+                    <i data-feather="clock"></i> Version History
+                </h1>
+                
+                <!-- ✅ CAMBIO: Solo mostrar botón si:
+                     - Usuario autenticado
+                     - Es el propietario
+                     - Dataset NO sincronizado (sin DOI)
+                -->
+                {% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createVersionModal">
+                    <i data-feather="plus"></i> Create New Version
+                </button>
+                {% elif dataset.ds_meta_data.dataset_doi %}
+                <span class="badge bg-info">
+                    <i data-feather="lock"></i> Public dataset (versions locked)
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de versiones -->
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            {% if versions %}
+            <div class="timeline">
+                {% for version in versions %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title">
+                                    <span class="badge bg-primary">v{{ version.version_number }}</span>
+                                    {{ version.title }}
+                                </h5>
+                                <p class="text-muted mb-2">
+                                    <i data-feather="user" style="width: 14px;"></i> 
+                                    {{ version.created_by.profile.name if version.created_by else 'Unknown' }}
+                                    • 
+                                    <i data-feather="calendar" style="width: 14px;"></i>
+                                    {{ version.created_at.strftime('%B %d, %Y at %H:%M') }}
+                                </p>
+                            </div>
+                            
+                            {% if loop.index > 1 %}
+                            <a href="{{ url_for('dataset.compare_versions', version1_id=versions[loop.index - 1].id, version2_id=version.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i data-feather="git-compare"></i> Compare with previous
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Changelog -->
+                        <div class="mt-3">
+                            <h6><i data-feather="file-text"></i> Changes:</h6>
+                            <div class="border-start border-3 border-primary ps-3">
+                                <pre class="mb-0" style="white-space: pre-wrap;">{{ version.changelog }}</pre>
+                            </div>
+                        </div>
+                        
+                        <!-- Métricas GPX -->
+                        {% if version.version_type == 'gpx' %}
+                        <div class="mt-3">
+                            <h6><i data-feather="activity"></i> GPX Statistics:</h6>
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.total_distance_km }} km</h6>
+                                        <small class="text-muted">Distance</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.total_elevation_gain }} m</h6>
+                                        <small class="text-muted">Elevation Gain</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.track_count }}</h6>
+                                        <small class="text-muted">Tracks</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.total_points }}</h6>
+                                        <small class="text-muted">Points</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Métricas UVL -->
+                        {% if version.version_type == 'uvl' %}
+                        <div class="mt-3">
+                            <h6><i data-feather="git-branch"></i> UVL Statistics:</h6>
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.total_features }}</h6>
+                                        <small class="text-muted">Features</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.total_constraints }}</h6>
+                                        <small class="text-muted">Constraints</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2">
+                                        <h6 class="mb-0">{{ version.model_count }}</h6>
+                                        <small class="text-muted">Models</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Files snapshot -->
+                        <div class="mt-3">
+                            <h6><i data-feather="folder"></i> Files ({{ version.files_snapshot|length }}):</h6>
+                            <ul class="list-unstyled mb-0">
+                                {% for filename, info in version.files_snapshot.items() %}
+                                <li class="text-muted">
+                                    <i data-feather="file" style="width: 14px;"></i>
+                                    {{ filename }} 
+                                    <small>({{ (info.size / 1024)|round(1) }} KB)</small>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i data-feather="info"></i>
+                <strong>No versions yet.</strong>
+                {% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
+                    Create your first version to start tracking changes.
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear versión (solo si NO está sincronizado) -->
+{% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
+<div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('dataset.create_version', dataset_id=dataset.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createVersionModalLabel">
+                        <i data-feather="git-branch"></i> Create New Version
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i data-feather="info"></i>
+                        <small>A snapshot of the current state will be saved.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Version Type</label>
+                        <select class="form-select" name="bump_type" id="bump_type">
+                            <option value="patch" selected>🔧 Patch (X.Y.Z+1) - Bug fixes, small changes</option>
+                            <option value="minor">✨ Minor (X.Y+1.0) - New features, compatible changes</option>
+                            <option value="major">🚀 Major (X+1.0.0) - Breaking changes, major updates</option>
+                        </select>
+                        <small class="text-muted">
+                            Current version: <strong>v{{ dataset.get_latest_version().version_number if dataset.get_latest_version() else '0.0.0' }}</strong>
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="changelog" class="form-label">Changelog <span class="text-danger">*</span></label>
+                        <textarea 
+                            class="form-control" 
+                            id="changelog" 
+                            name="changelog" 
+                            rows="4" 
+                            required
+                            placeholder="Describe what changed...&#10;&#10;Example:&#10;- Added 2 new tracks&#10;- Fixed elevation data&#10;- Updated metadata"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-feather="save"></i> Create Version
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    feather.replace();
+});
+</script>
+
+{% endblock %}

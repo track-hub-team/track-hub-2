@@ -13,7 +13,12 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
-    data_sets = db.relationship("DataSet", backref="user", lazy=True)
+    data_sets = db.relationship(
+        "BaseDataset",
+        foreign_keys="BaseDataset.user_id",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
     profile = db.relationship("UserProfile", backref="user", uselist=False)
 
     def __init__(self, **kwargs):
