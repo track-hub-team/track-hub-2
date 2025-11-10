@@ -24,6 +24,7 @@ class AuthorForm(FlaskForm):
 # ✅ NUEVO: Formulario base para feature models
 class BaseFeatureModelForm(FlaskForm):
     """Formulario base común para todos los tipos de archivos."""
+
     filename = StringField("Filename", validators=[DataRequired()])
     title = StringField("Title", validators=[Optional()])
     desc = TextAreaField("Description", validators=[Optional()])
@@ -55,8 +56,9 @@ class BaseFeatureModelForm(FlaskForm):
 # ✅ NUEVO: Formulario específico para UVL
 class UVLFeatureModelForm(BaseFeatureModelForm):
     """Formulario específico para archivos UVL."""
+
     file_version = StringField("UVL Version", validators=[Optional()], default="1.0")
-    
+
     class Meta:
         csrf = False
 
@@ -69,6 +71,7 @@ class UVLFeatureModelForm(BaseFeatureModelForm):
 # ✅ NUEVO: Formulario específico para GPX
 class GPXFeatureModelForm(BaseFeatureModelForm):
     """Formulario específico para archivos GPX."""
+
     file_version = StringField("GPX Version", validators=[Optional()], default="1.1")
     gpx_type = SelectField(
         "Track Type",
@@ -80,9 +83,9 @@ class GPXFeatureModelForm(BaseFeatureModelForm):
             ("other", "Other"),
         ],
         validators=[Optional()],
-        default="other"
+        default="other",
     )
-    
+
     class Meta:
         csrf = False
 
@@ -102,8 +105,9 @@ class GPXFeatureModelForm(BaseFeatureModelForm):
 # ⚠️ DEPRECADO: Mantener por compatibilidad temporal
 class FeatureModelForm(BaseFeatureModelForm):
     """Formulario genérico (deprecado, usar específicos)."""
+
     file_version = StringField("File Version", validators=[Optional()])
-    
+
     class Meta:
         csrf = False
 
@@ -119,19 +123,16 @@ class DataSetForm(FlaskForm):
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
     tags = StringField("Tags (separated by commas)", validators=[Optional()])
-    
+
     # Mantener feature_models genérico para compatibilidad
-    feature_models = FieldList(
-        FormField(FeatureModelForm), 
-        min_entries=0
-    )
-    
+    feature_models = FieldList(FormField(FeatureModelForm), min_entries=0)
+
     authors = FieldList(
         FormField(AuthorForm),
         min_entries=1,
         validators=[DataRequired()],
     )
-    
+
     submit = SubmitField("Upload dataset")
 
     def get_dsmetadata(self):

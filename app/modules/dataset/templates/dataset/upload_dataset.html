@@ -11,7 +11,7 @@
         <div class="col-12">
             <div class="alert alert-info">
                 <i data-feather="info"></i>
-                <strong>Choose your dataset type:</strong> Upload UVL feature models for variability analysis, 
+                <strong>Choose your dataset type:</strong> Upload UVL feature models for variability analysis,
                 or GPX tracks for GPS data visualization.
             </div>
         </div>
@@ -27,7 +27,7 @@
                 <div class="card-body">
                     <form id="basic_info_form">
                         {{ form.csrf_token }}
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Title *</label>
                             {{ form.title(class="form-control", required=True) }}
@@ -73,28 +73,28 @@
                         <div class="row mb-3 author-block">
                             <div class="col-md-4">
                                 <label class="form-label">Name *</label>
-                                <input type="text" 
-                                       name="authors-0-name" 
-                                       class="form-control" 
-                                       value="{{ current_user.profile.name }} {{ current_user.profile.surname }}" 
-                                       readonly 
+                                <input type="text"
+                                       name="authors-0-name"
+                                       class="form-control"
+                                       value="{{ current_user.profile.name }} {{ current_user.profile.surname }}"
+                                       readonly
                                        required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Affiliation</label>
-                                <input type="text" 
-                                       name="authors-0-affiliation" 
-                                       class="form-control" 
-                                       value="{{ current_user.profile.affiliation or '' }}" 
+                                <input type="text"
+                                       name="authors-0-affiliation"
+                                       class="form-control"
+                                       value="{{ current_user.profile.affiliation or '' }}"
                                        readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">ORCID</label>
-                                <input type="text" 
-                                    name="authors-0-orcid" 
-                                    class="form-control" 
-                                    value="{{ current_user.profile.orcid or '' }}" 
-                                    placeholder="0000-0000-0000-0000" 
+                                <input type="text"
+                                    name="authors-0-orcid"
+                                    class="form-control"
+                                    value="{{ current_user.profile.orcid or '' }}"
+                                    placeholder="0000-0000-0000-0000"
                                     readonly>
                             </div>
                             <div class="col-md-1">
@@ -102,7 +102,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <button type="button" id="add_author" class="btn btn-secondary btn-sm mt-2">
                         <i data-feather="plus"></i> Add author
                     </button>
@@ -129,11 +129,11 @@
         <div class="col-12">
             <!-- Contenedor de errores -->
             <div id="upload_errors" style="display: none; margin-bottom: 1rem;"></div>
-            
+
             <div class="alert alert-warning" role="alert">
                 <input type="checkbox" id="confirm_upload" checked>
                 <label for="confirm_upload">
-                    I agree to have my dataset automatically uploaded to Zenodo and made available to the public according to the 
+                    I agree to have my dataset automatically uploaded to Zenodo and made available to the public according to the
                     <a href="https://www.openscience.org/" target="_blank">Open Science</a> manifesto
                 </label>
             </div>

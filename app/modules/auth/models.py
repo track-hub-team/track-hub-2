@@ -14,10 +14,7 @@ class User(db.Model, UserMixin):  # type: ignore
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     data_sets = db.relationship(
-        "BaseDataset",
-        foreign_keys="BaseDataset.user_id",
-        lazy=True,
-        cascade="all, delete-orphan"
+        "BaseDataset", foreign_keys="BaseDataset.user_id", lazy=True, cascade="all, delete-orphan"
     )
     profile = db.relationship("UserProfile", backref="user", uselist=False)
 

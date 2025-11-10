@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let currentAuthors = authorsList.querySelectorAll('.author-block').length;
             let newAuthor = createAuthorBlock(currentAuthors, "");
             authorsList.appendChild(newAuthor);
-            
+
             // Actualizar íconos de Feather
             if (typeof feather !== 'undefined') {
                 feather.replace();
@@ -211,17 +211,17 @@ Dropzone.options.uvlDropzone = {
     dictDefaultMessage: "Drop UVL files here or click to browse",
     dictFileTooBig: "File is too big ({{filesize}}MB). Max: {{maxFilesize}}MB",
     dictInvalidFileType: "Invalid file type. Only .uvl files allowed",
-    
+
     init: function () {
         const dz = this;
-        
+
         dz.on("success", function (file, response) {
             if (typeof show_upload_dataset === "function") show_upload_dataset();
 
             const fileList = document.getElementById("uvl-file-list");
             const li = document.createElement("li");
             li.className = "file-item mb-3 p-3 border rounded";
-            
+
             const h4 = document.createElement("h4");
             h4.className = "h6 mb-2";
             h4.innerHTML = `<i data-feather="file-text"></i> ${response.filename}`;
@@ -250,22 +250,22 @@ Dropzone.options.uvlDropzone = {
             form.innerHTML = `
                 <div class="row">
                     <input type="hidden" name="feature_models-${id}-filename" value="${response.filename}">
-                    
+
                     <div class="col-12 mb-3">
                         <label class="form-label">Title *</label>
                         <input type="text" class="form-control" name="feature_models-${id}-title" required>
                     </div>
-                    
+
                     <div class="col-12 mb-3">
                         <label class="form-label">Description</label>
                         <textarea rows="3" class="form-control" name="feature_models-${id}-desc"></textarea>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">UVL Version</label>
                         <input type="text" class="form-control" name="feature_models-${id}-file_version" value="1.0">
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Publication type</label>
                         <select class="form-control" name="feature_models-${id}-publication_type">
@@ -276,12 +276,12 @@ Dropzone.options.uvlDropzone = {
                             <option value="other">Other</option>
                         </select>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Publication DOI</label>
                         <input type="text" class="form-control" name="feature_models-${id}-publication_doi" placeholder="10.1234/example.doi">
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Tags (separated by commas)</label>
                         <input type="text" class="form-control" name="feature_models-${id}-tags" placeholder="feature-model, spl, variability">
@@ -308,7 +308,7 @@ Dropzone.options.uvlDropzone = {
 
             li.appendChild(form);
             fileList.appendChild(li);
-            
+
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
@@ -338,17 +338,17 @@ Dropzone.options.gpxDropzone = {
     dictDefaultMessage: "Drop GPX files here or click to browse",
     dictFileTooBig: "File is too big ({{filesize}}MB). Max: {{maxFilesize}}MB",
     dictInvalidFileType: "Invalid file type. Only .gpx files allowed",
-    
+
     init: function () {
         const dz = this;
-        
+
         dz.on("success", function (file, response) {
             if (typeof show_upload_dataset === "function") show_upload_dataset();
 
             const fileList = document.getElementById("gpx-file-list");
             const li = document.createElement("li");
             li.className = "file-item mb-3 p-3 border rounded";
-            
+
             const h4 = document.createElement("h4");
             h4.className = "h6 mb-2";
             h4.innerHTML = `<i data-feather="map-pin"></i> ${response.filename}`;
@@ -377,22 +377,22 @@ Dropzone.options.gpxDropzone = {
             form.innerHTML = `
                 <div class="row">
                     <input type="hidden" name="feature_models-${id}-filename" value="${response.filename}">
-                    
+
                     <div class="col-12 mb-3">
                         <label class="form-label">Track Name *</label>
                         <input type="text" class="form-control" name="feature_models-${id}-title" required>
                     </div>
-                    
+
                     <div class="col-12 mb-3">
                         <label class="form-label">Description</label>
                         <textarea rows="3" class="form-control" name="feature_models-${id}-desc" placeholder="Describe your track..."></textarea>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">GPX Version</label>
                         <input type="text" class="form-control" name="feature_models-${id}-file_version" value="1.1" readonly>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Track Type</label>
                         <select class="form-control" name="feature_models-${id}-gpx_type">
@@ -403,7 +403,7 @@ Dropzone.options.gpxDropzone = {
                             <option value="other">Other</option>
                         </select>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Publication type</label>
                         <select class="form-control" name="feature_models-${id}-publication_type">
@@ -414,12 +414,12 @@ Dropzone.options.gpxDropzone = {
                             <option value="other">Other</option>
                         </select>
                     </div>
-                    
+
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Publication DOI</label>
                         <input type="text" class="form-control" name="feature_models-${id}-publication_doi" placeholder="10.1234/example.doi">
                     </div>
-                    
+
                     <div class="col-12 mb-3">
                         <label class="form-label">Tags (separated by commas)</label>
                         <input type="text" class="form-control" name="feature_models-${id}-tags" placeholder="outdoor, gps, trail">
@@ -446,7 +446,7 @@ Dropzone.options.gpxDropzone = {
 
             li.appendChild(form);
             fileList.appendChild(li);
-            
+
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
@@ -474,58 +474,58 @@ document.addEventListener('DOMContentLoaded', function() {
     if (uploadBtn) {
         uploadBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            
+
             // Validar que hay al menos 1 archivo UVL o GPX
             const uvlFiles = document.querySelectorAll('#uvl-file-list .file-item').length;
             const gpxFiles = document.querySelectorAll('#gpx-file-list .file-item').length;
-            
+
             if (uvlFiles === 0 && gpxFiles === 0) {
                 write_upload_error('Please upload at least one file (UVL or GPX)');
                 return;
             }
-            
+
             // Validar título y descripción
             if (!check_title_and_description()) {
                 return;
             }
-            
+
             // Validar autores
             const authors = document.querySelectorAll('.author-block');
             let validAuthors = true;
-            
+
             authors.forEach((author) => {
                 const nameInput = author.querySelector('input[name*="-name"]');
                 const orcidInput = author.querySelector('input[name*="-orcid"]');
-                
+
                 if (nameInput && nameInput.value.trim() === '') {
                     write_upload_error("Author's name cannot be empty");
                     validAuthors = false;
                     return;
                 }
-                
+
                 if (orcidInput && orcidInput.value.trim() !== '' && !isValidOrcid(orcidInput.value.trim())) {
                     write_upload_error("ORCID value does not conform to valid format: " + orcidInput.value);
                     validAuthors = false;
                     return;
                 }
             });
-            
+
             if (!validAuthors) {
                 return;
             }
-            
+
             clean_upload_errors();
             show_loading();
-            
+
             // Recopilar datos del formulario
             const formData = new FormData();
-            
+
             // CSRF Token
             const csrfToken = document.querySelector('input[name="csrf_token"]');
             if (csrfToken) {
                 formData.append('csrf_token', csrfToken.value);
             }
-            
+
             // Información básica
             const basicForm = document.getElementById('basic_info_form');
             if (basicForm) {
@@ -536,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             }
-            
+
             // Añadir feature models de UVL
             document.querySelectorAll('.uvl_form').forEach(form => {
                 const inputs = form.querySelectorAll('input, select, textarea');
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             });
-            
+
             // Añadir feature models de GPX
             document.querySelectorAll('.gpx_form').forEach(form => {
                 const inputs = form.querySelectorAll('input, select, textarea');
@@ -556,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             });
-            
+
             // Añadir autores
             authors.forEach((author) => {
                 const inputs = author.querySelectorAll('input');
@@ -566,13 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             });
-            
+
             // Debug: mostrar datos que se van a enviar
             console.log('FormData contents:');
             for (let pair of formData.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);
             }
-            
+
             // Enviar formulario
             fetch('/dataset/upload', {
                 method: 'POST',
@@ -587,18 +587,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(result => {
                 hide_loading();
                 console.log('Response data:', result.data);
-                
+
                 if (result.status === 200) {
                     window.location.href = '/dataset/list';
                 } else {
                     const errorMessage = result.data.message || 'Unknown error';
                     const errors = result.data.errors || [];
-                    
+
                     let fullError = errorMessage;
                     if (errors.length > 0) {
                         fullError += '\n\nDetails:\n' + errors.join('\n');
                     }
-                    
+
                     write_upload_error(fullError);
                 }
             })

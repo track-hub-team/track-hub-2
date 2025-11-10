@@ -3,7 +3,7 @@
         <h3 class="mb-4">
             <i data-feather="map"></i> GPS Track Visualization
         </h3>
-        
+
         <!-- ✅ Selector de tracks con pestañas -->
         <div class="mb-4 border-bottom">
             <nav class="nav nav-tabs" id="track-tabs" role="tablist" style="border: none;">
@@ -12,7 +12,7 @@
                     {% if fm.files %}
                         {% for file in fm.files %}
                             {% if file.name.lower().endswith('.gpx') %}
-                            <button 
+                            <button
                                 class="nav-link track-tab {% if not first_tab_found.value %}active{% endif %}"
                                 data-track-id="{{ fm.fm_meta_data_id }}"
                                 data-track-name="{{ file.name }}"
@@ -30,10 +30,10 @@
                 {% endfor %}
             </nav>
         </div>
-        
+
         <!-- Mapa -->
         <div id="gpx-map" style="height: 450px; width: 100%; border-radius: 8px; margin-bottom: 20px;"></div>
-        
+
         <!-- Estadísticas del track activo -->
         <div id="track-stats" class="row text-center">
             <!-- Se rellenará dinámicamente con JavaScript -->
@@ -61,9 +61,9 @@ function initMap() {
     if (map) {
         map.remove();
     }
-    
+
     map = L.map('gpx-map').setView([40.4168, -3.7038], 6);
-    
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
@@ -75,43 +75,43 @@ function initMap() {
 async function loadTrack(fileId, fileName) {
     try {
         // Mostrar loading
-        document.getElementById('track-stats').innerHTML = 
+        document.getElementById('track-stats').innerHTML =
             '<div class="col-12 text-center py-4">' +
                 '<div class="spinner-border text-primary" role="status">' +
                     '<span class="visually-hidden">Loading...</span>' +
                 '</div>' +
                 '<p class="mt-2 text-muted">Loading track...</p>' +
             '</div>';
-        
+
         // Obtener datos del GPX
         const response = await fetch('/api/gpx/' + fileId);
         if (!response.ok) {
             throw new Error('HTTP error! status: ' + response.status);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.error) {
             throw new Error(data.error);
         }
-        
+
         // Limpiar capas anteriores
         if (currentTrackLayer) map.removeLayer(currentTrackLayer);
         if (startMarker) map.removeLayer(startMarker);
         if (endMarker) map.removeLayer(endMarker);
-        
+
         // Dibujar el track
         currentTrackLayer = L.polyline(data.coordinates, {
             color: '#0d6efd',
             weight: 3,
             opacity: 0.7
         }).addTo(map);
-        
+
         // Añadir marcadores de inicio y fin
         if (data.coordinates.length > 0) {
             const startCoord = data.coordinates[0];
             const endCoord = data.coordinates[data.coordinates.length - 1];
-            
+
             // Marcador verde de inicio
             startMarker = L.marker(startCoord, {
                 icon: L.icon({
@@ -122,7 +122,7 @@ async function loadTrack(fileId, fileName) {
                     shadowSize: [41, 41]
                 })
             }).addTo(map).bindPopup('<b>Start</b><br>' + fileName);
-            
+
             // Marcador rojo de fin
             endMarker = L.marker(endCoord, {
                 icon: L.icon({
@@ -134,16 +134,16 @@ async function loadTrack(fileId, fileName) {
                 })
             }).addTo(map).bindPopup('<b>Finish</b><br>' + fileName);
         }
-        
+
         // Ajustar vista al track
         map.fitBounds(currentTrackLayer.getBounds(), { padding: [50, 50] });
-        
+
         // Mostrar estadísticas
         displayStats(data, fileName);
-        
+
     } catch (error) {
         console.error('Error loading track:', error);
-        document.getElementById('track-stats').innerHTML = 
+        document.getElementById('track-stats').innerHTML =
             '<div class="col-12">' +
                 '<div class="alert alert-danger" role="alert">' +
                     '<i data-feather="alert-circle"></i>' +
@@ -192,7 +192,7 @@ function displayStats(data, fileName) {
             colorClass: 'text-warning'
         }
     ];
-    
+
     document.getElementById('track-stats').innerHTML = stats.map(function(stat) {
         return '<div class="col-md-2 col-6 mb-3">' +
                 '<div class="border rounded p-3 h-100">' +
@@ -202,7 +202,7 @@ function displayStats(data, fileName) {
                 '</div>' +
             '</div>';
     }).join('');
-    
+
     // Reemplazar iconos de Feather
     if (typeof feather !== 'undefined') {
         feather.replace();
@@ -214,10 +214,10 @@ function displayStats(data, fileName) {
  */
 function formatDuration(seconds) {
     if (!seconds || seconds === 0) return 'N/A';
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     if (hours > 0) {
         return hours + 'h ' + minutes + 'm';
     }
@@ -229,18 +229,18 @@ function formatDuration(seconds) {
  */
 function initTrackSelector() {
     const tabs = document.querySelectorAll('.track-tab');
-    
+
     if (tabs.length === 0) {
         console.warn('No GPX tracks found');
         return;
     }
-    
+
     // Cargar el primer track por defecto
     const firstTab = tabs[0];
     const firstTrackId = firstTab.dataset.trackId;
     const firstTrackName = firstTab.dataset.trackName;
     loadTrack(firstTrackId, firstTrackName);
-    
+
     // Event listeners para los tabs
     tabs.forEach(function(tab) {
         tab.addEventListener('click', function() {
@@ -248,10 +248,10 @@ function initTrackSelector() {
             tabs.forEach(function(t) {
                 t.classList.remove('active');
             });
-            
+
             // Añadir clase activa al tab clickeado
             this.classList.add('active');
-            
+
             // Cargar el track
             const trackId = this.dataset.trackId;
             const trackName = this.dataset.trackName;
