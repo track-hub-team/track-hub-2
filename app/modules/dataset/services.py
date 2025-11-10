@@ -20,6 +20,7 @@ from app.modules.dataset.models import (
     UVLDataset,
     UVLDatasetVersion,
 )
+from app.modules.dataset.registry import get_descriptor, infer_kind_from_filename
 from app.modules.dataset.repositories import (
     AuthorRepository,
     DataSetRepository,
@@ -32,7 +33,6 @@ from app.modules.featuremodel.repositories import FeatureModelRepository, FMMeta
 from app.modules.hubfile.repositories import (
     HubfileDownloadRecordRepository,
     HubfileRepository,
-    HubfileViewRecordRepository,
 )
 from core.services.BaseService import BaseService
 
@@ -95,10 +95,6 @@ class DataSetService(BaseService):
 
     def move_feature_models(self, dataset: BaseDataset):
         """Mueve los archivos de feature models desde la carpeta temporal a la definitiva."""
-        import shutil
-
-        from app.modules.auth.services import AuthenticationService
-
         current_user = AuthenticationService().get_authenticated_user()
         source_dir = current_user.temp_folder()
 
@@ -166,8 +162,6 @@ class DataSetService(BaseService):
 
     def create_from_form(self, form, current_user) -> BaseDataset:
         """Crea un dataset desde el formulario."""
-        from app.modules.dataset.registry import get_descriptor, infer_kind_from_filename
-
         logger.info("Creating dataset from form...")
 
         if not form.feature_models or len(form.feature_models) == 0:

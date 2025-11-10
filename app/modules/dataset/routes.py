@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
-from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
+from flask import abort, flash, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app import db
@@ -503,7 +503,8 @@ def edit_dataset(dataset_id):
                 file_kind = infer_kind_from_filename(filename)
                 if file_kind != dataset.dataset_kind:
                     flash(
-                        f"File type mismatch: {filename} is {file_kind.upper()} but dataset is {dataset.dataset_kind.upper()}",
+                        f"File type mismatch: {filename} is {file_kind.upper()} ",
+                        f"but dataset is {dataset.dataset_kind.upper()}",
                         "danger",
                     )
                     continue
@@ -534,8 +535,8 @@ def edit_dataset(dataset_id):
                     commit=False,
                     filename=filename,
                     title=filename,
-                    description=f"Added via edit",
-                    publication_type="none",  # ✅ Valor por defecto obligatorio
+                    description="Added via edit",
+                    publication_type="none",
                 )
 
                 fm = FeatureModelRepository().create(

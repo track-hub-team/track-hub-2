@@ -1,7 +1,7 @@
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
-from app.modules.dataset.models import Author, PublicationType
+from app.modules.dataset.models import PublicationType
 
 
 class FeatureModel(db.Model):

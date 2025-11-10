@@ -1,9 +1,9 @@
 import logging
 
-from sqlalchemy import and_, any_, or_
+from sqlalchemy import or_
 
-from app.modules.dataset.models import Author, BaseDataset, DSMetaData, PublicationType
-from app.modules.featuremodel.models import FeatureModel, FMMetaData
+from app.modules.dataset.models import BaseDataset, DSMetaData
+from app.modules.featuremodel.models import FMMetaData
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
