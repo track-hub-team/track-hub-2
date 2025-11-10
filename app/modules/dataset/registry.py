@@ -1,14 +1,11 @@
 import logging
 import os
 import xml.etree.ElementTree as ET
-from typing import ClassVar, Optional, Type
+from typing import Type
 
 from flask_wtf import FlaskForm
 
-from app.modules.dataset.forms import (
-    GPXFeatureModelForm,
-    UVLFeatureModelForm,
-)
+from app.modules.dataset.forms import GPXFeatureModelForm, UVLFeatureModelForm
 from app.modules.dataset.models import BaseDataset, GPXDataset, UVLDataset
 
 logger = logging.getLogger(__name__)
@@ -18,16 +15,16 @@ logger = logging.getLogger(__name__)
 class DataTypeHandler:
     """Interfaz base para validadores de tipos de archivo."""
 
-    ext: ClassVar[Optional[str]] = None
-    name: ClassVar[Optional[str]] = None
+    ext = ""
+    name = ""
 
     def validate(self, filepath: str) -> bool:
         raise NotImplementedError
 
 
 class UVLHandler(DataTypeHandler):
-    ext: ClassVar[Optional[str]] = ".uvl"
-    name: ClassVar[Optional[str]] = "uvl"
+    ext = ".uvl"
+    name = "uvl"
 
     def validate(self, filepath: str) -> bool:
         if not os.path.exists(filepath):
@@ -45,8 +42,8 @@ class UVLHandler(DataTypeHandler):
 
 
 class GPXHandler(DataTypeHandler):
-    ext: ClassVar[Optional[str]] = ".gpx"
-    name: ClassVar[Optional[str]] = "gpx"
+    ext = ".gpx"
+    name = "gpx"
 
     def validate(self, filepath: str) -> bool:
         if not os.path.exists(filepath):

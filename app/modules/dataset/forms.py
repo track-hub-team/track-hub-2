@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
-from wtforms.validators import URL, DataRequired, Optional
+from wtforms.validators import DataRequired, Optional
 
 from app.modules.dataset.models import PublicationType
 
@@ -33,7 +33,7 @@ class BaseFeatureModelForm(FlaskForm):
         choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
         validators=[Optional()],
     )
-    publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
+    publication_doi = StringField("Publication DOI", validators=[Optional()])
     tags = StringField("Tags (separated by commas)", validators=[Optional()])
 
     class Meta:
@@ -120,8 +120,8 @@ class DataSetForm(FlaskForm):
         choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
         validators=[DataRequired()],
     )
-    publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
-    dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
+    publication_doi = StringField("Publication DOI", validators=[Optional()])
+    dataset_doi = StringField("Dataset DOI", validators=[Optional()])
     tags = StringField("Tags (separated by commas)", validators=[Optional()])
 
     # Mantener feature_models genérico para compatibilidad
