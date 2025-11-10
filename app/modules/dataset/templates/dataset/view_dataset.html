@@ -43,15 +43,15 @@
                         <div>
                             <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                             <span class="badge bg-info">{{ dataset.dataset_kind|upper }}</span>
-                            
+
                             <!-- ✅ Badge: Número de versiones -->
                             {% if dataset.get_version_count() > 0 %}
                             <span class="badge bg-success">
-                                <i data-feather="git-branch" style="width: 14px; height: 14px;"></i> 
+                                <i data-feather="git-branch" style="width: 14px; height: 14px;"></i>
                                 {{ dataset.get_version_count() }} version(s)
                             </span>
                             {% endif %}
-                            
+
                             <!-- ✅ Badge: Versión actual -->
                             {% set latest_version = dataset.get_latest_version() %}
                             {% if latest_version %}
@@ -62,25 +62,25 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <!-- ✅ Botones de acción -->
                     <div class="btn-group" role="group">
                         <!-- Ver historial (todos pueden verlo si tiene versiones) -->
                         {% if dataset.get_version_count() > 0 %}
-                        <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}" 
+                        <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}"
                            class="btn btn-outline-primary btn-sm">
                             <i data-feather="clock"></i> Version History
                         </a>
                         {% endif %}
-                        
+
                         <!-- Editar (solo propietario) -->
                         {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
-                        <a href="{{ url_for('dataset.edit_dataset', dataset_id=dataset.id) }}" 
+                        <a href="{{ url_for('dataset.edit_dataset', dataset_id=dataset.id) }}"
                            class="btn btn-outline-secondary btn-sm">
                             <i data-feather="edit"></i> Edit
                         </a>
                         {% endif %}
-                        
+
                         <!-- Crear versión (solo propietario de datasets NO sincronizados) -->
                         {% if current_user.is_authenticated and current_user.id == dataset.user_id and not dataset.ds_meta_data.dataset_doi %}
                         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createVersionModal">
@@ -89,7 +89,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
                 <div class="row mb-4">
@@ -270,10 +270,10 @@
                                 </div>
                             </div>
                             <div class="col-12 text-end">
-                                
+
                                 <!-- ✅ Botones específicos por tipo de archivo -->
                                 {% include 'dataset/partials/file_actions_' + dataset.dataset_kind + '.html' ignore missing %}
-                                
+
                                 <!-- Fallback: botones genéricos -->
                                 {% if dataset.dataset_kind not in ['uvl', 'gpx'] %}
                                     <button onclick="viewFile('{{ file.id }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
@@ -319,7 +319,7 @@
                         <i data-feather="info"></i>
                         <small>A snapshot of the current state will be saved.</small>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Version Type</label>
                         <select class="form-select" name="bump_type" id="bump_type">
@@ -335,14 +335,14 @@
                             {% endif %}
                         </small>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="changelog" class="form-label">Changelog <span class="text-danger">*</span></label>
-                        <textarea 
-                            class="form-control" 
-                            id="changelog" 
-                            name="changelog" 
-                            rows="4" 
+                        <textarea
+                            class="form-control"
+                            id="changelog"
+                            name="changelog"
+                            rows="4"
                             required
                             placeholder="Describe what changed...&#10;&#10;Example:&#10;- Added 2 new tracks&#10;- Updated metadata&#10;- Fixed elevation data"
                         ></textarea>

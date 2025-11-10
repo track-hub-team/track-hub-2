@@ -1,0 +1,158 @@
+# ----------------------------------------------------------------------------
+# Stage 4: Security Workflow
+# This workflow runs security scans in parallel with other stages.
+#
+# Security checks:
+# - Dependency vulnerability scanning with pip-audit
+# - OWASP Dependency-Check for comprehensive dependency analysis
+# - Static Application Security Testing (SAST) with Bandit
+# - Secret scanning with TruffleHog
+#
+# ----------------------------------------------------------------------------
+
+name: Stage 4 - Security
+
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Clean requirements.txt
+        run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
+
+      - name: Run pip-audit
+        run: |
+          echo "## Dependency Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: This scan reports vulnerabilities but does not block the pipeline." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          pip-audit --requirement requirements.txt --format json --output pip-audit.json || true
+          pip-audit --requirement requirements.txt --format markdown >> $GITHUB_STEP_SUMMARY || true
+          pip-audit --requirement requirements.txt || echo "⚠️ Vulnerabilities found but continuing..."
+        continue-on-error: true
+
+      - name: Upload pip-audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: pip-audit.json
+          retention-days: 30
+
+  sast-scan:
+    name: SAST Security Scan (Bandit)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Bandit with SARIF support
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit[toml] bandit-sarif-formatter
+
+      - name: Run Bandit security scan
+        run: |
+          echo "## SAST Security Scan (Bandit)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: This scan reports security issues but does not block the pipeline." >> $GITHUB_STEP_SUMMARY
+          echo "Results are uploaded to GitHub Security tab and available as downloadable artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Generate JSON and SARIF reports
+          bandit -r app rosemary core -f json -o bandit-report.json || true
+          bandit -r app rosemary core -f sarif -o bandit-report.sarif || true
+
+          # Show console output
+          bandit -r app rosemary core -f screen || echo "⚠️ Security issues found but continuing..."
+
+      - name: Upload Bandit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-reports
+          path: |
+            bandit-report.json
+            bandit-report.sarif
+          retention-days: 30
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-report.sarif
+          category: bandit
+        continue-on-error: true
+
+  owasp-dependency-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      # Solo warning, se pone puntuación a 11 para que no falle
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Track-Hub-1'
+          path: '.'
+          format: 'ALL'
+          args: >
+            --failOnCVSS 11
+            --enableRetired
+        continue-on-error: true
+
+      - name: Upload OWASP Dependency-Check reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-reports
+          path: reports/
+          retention-days: 30
+
+  secret-scan:
+    name: Secret Scanning (TruffleHog)
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog secret scanner
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --debug --only-verified

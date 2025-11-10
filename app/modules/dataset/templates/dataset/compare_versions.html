@@ -9,7 +9,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">Home</a></li>
-                
+
                 {% if dataset.ds_meta_data.dataset_doi %}
                     <li class="breadcrumb-item">
                         <a href="{{ url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}">
@@ -23,7 +23,7 @@
                         </a>
                     </li>
                 {% endif %}
-                
+
                 <li class="breadcrumb-item">
                     <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}">Version History</a>
                 </li>
@@ -35,7 +35,7 @@
 
 <div class="row">
     <div class="col-12">
-        
+
         <!-- ✅ Selector de versiones -->
         <div class="card mb-3">
             <div class="card-body">
@@ -76,13 +76,13 @@
                 </form>
             </div>
         </div>
-        
+
         <div class="card">
             <div class="card-header">
                 <h2><i data-feather="git-compare"></i> Comparing Versions</h2>
             </div>
             <div class="card-body">
-                
+
                 <!-- Cabecera -->
                 <div class="row mb-4">
                     <div class="col-md-6">
@@ -171,12 +171,12 @@
     document.addEventListener('DOMContentLoaded', function() {
         feather.replace();
     });
-    
+
     // ✅ Función para actualizar comparación
     function updateComparison() {
         const v1 = document.getElementById('version1').value;
         const v2 = document.getElementById('version2').value;
-        
+
         if (v1 && v2) {
             if (v1 === v2) {
                 alert('Please select two different versions to compare');
@@ -188,7 +188,7 @@
             alert('Please select both versions');
         }
     }
-    
+
     // ✅ Auto-submit al cambiar versión (opcional)
     document.getElementById('version1').addEventListener('change', function() {
         const v2 = document.getElementById('version2').value;
@@ -196,7 +196,7 @@
             updateComparison();
         }
     });
-    
+
     document.getElementById('version2').addEventListener('change', function() {
         const v1 = document.getElementById('version1').value;
         if (v1 && this.value !== v1) {

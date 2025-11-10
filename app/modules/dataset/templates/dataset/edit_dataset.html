@@ -16,11 +16,11 @@
                     <li class="breadcrumb-item active">Edit</li>
                 </ol>
             </nav>
-            
+
             <h1 class="mb-4">
                 <i data-feather="edit"></i> Edit Dataset
             </h1>
-            
+
             <!-- Alerta si está sincronizado -->
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="alert alert-warning">
@@ -33,46 +33,46 @@
                 <strong>Auto-versioning enabled:</strong> Changes will create a new version automatically (patch increment).
             </div>
             {% endif %}
-            
+
             <!-- Formulario -->
             <form method="POST" enctype="multipart/form-data" class="card">
                 <div class="card-body">
                     <!-- Título -->
                     <div class="mb-3">
                         <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
-                        <input 
-                            type="text" 
-                            class="form-control" 
-                            id="title" 
-                            name="title" 
-                            value="{{ dataset.ds_meta_data.title }}" 
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="title"
+                            name="title"
+                            value="{{ dataset.ds_meta_data.title }}"
                             required>
                     </div>
-                    
+
                     <!-- Descripción -->
                     <div class="mb-3">
                         <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
-                        <textarea 
-                            class="form-control" 
-                            id="description" 
-                            name="description" 
-                            rows="5" 
+                        <textarea
+                            class="form-control"
+                            id="description"
+                            name="description"
+                            rows="5"
                             required>{{ dataset.ds_meta_data.description }}</textarea>
                     </div>
-                    
+
                     <!-- Tags -->
                     <div class="mb-3">
                         <label for="tags" class="form-label">Tags</label>
-                        <input 
-                            type="text" 
-                            class="form-control" 
-                            id="tags" 
-                            name="tags" 
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="tags"
+                            name="tags"
                             value="{{ dataset.ds_meta_data.tags or '' }}"
                             placeholder="tag1, tag2, tag3">
                         <small class="text-muted">Separate tags with commas</small>
                     </div>
-                    
+
                     <!-- Archivos actuales -->
                     <div class="mb-3">
                         <label class="form-label">Current Files</label>
@@ -90,23 +90,23 @@
                             {% endfor %}
                         </ul>
                     </div>
-                    
+
                     <!-- Subir nuevos archivos -->
                     <div class="mb-3">
                         <label for="files" class="form-label">Add New Files</label>
-                        <input 
-                            type="file" 
-                            class="form-control" 
-                            id="files" 
-                            name="files" 
+                        <input
+                            type="file"
+                            class="form-control"
+                            id="files"
+                            name="files"
                             multiple
                             accept=".uvl,.gpx">
                         <small class="text-muted">Supported formats: UVL, GPX</small>
                     </div>
                 </div>
-                
+
                 <div class="card-footer d-flex justify-content-between">
-                    <a href="{% if dataset.ds_meta_data.dataset_doi %}{{ url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}{% else %}{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id) }}{% endif %}" 
+                    <a href="{% if dataset.ds_meta_data.dataset_doi %}{{ url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}{% else %}{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id) }}{% endif %}"
                        class="btn btn-secondary">
                         <i data-feather="x"></i> Cancel
                     </a>

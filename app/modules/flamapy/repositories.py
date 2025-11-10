@@ -1,4 +1,4 @@
-from app.modules.flamapy.models import Flamapy
+from app.modules.flamapy.models import Flamapy  # type: ignore
 from core.repositories.BaseRepository import BaseRepository
 
 

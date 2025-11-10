@@ -5,12 +5,12 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
+from app.modules.dataset.models import BaseDataset  # 👈 usar el mapper base para consultas polimórficas
 from app.modules.dataset.models import (
     Author,
-    BaseDataset,   # 👈 usar el mapper base para consultas polimórficas
     DOIMapping,
-    DSMetaData,
     DSDownloadRecord,
+    DSMetaData,
     DSViewRecord,
 )
 from core.repositories.BaseRepository import BaseRepository

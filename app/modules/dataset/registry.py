@@ -5,7 +5,8 @@ from typing import Type
 
 from flask_wtf import FlaskForm
 
-from app.modules.dataset.models import BaseDataset, UVLDataset, GPXDataset
+from app.modules.dataset.forms import GPXFeatureModelForm, UVLFeatureModelForm
+from app.modules.dataset.models import BaseDataset, GPXDataset, UVLDataset
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 # === Handlers para validación por tipo ===
 class DataTypeHandler:
     """Interfaz base para validadores de tipos de archivo."""
+
     ext = ""
     name = ""
 
@@ -29,13 +31,13 @@ class UVLHandler(DataTypeHandler):
             raise ValueError("File not found")
         if os.path.getsize(filepath) == 0:
             raise ValueError("File is empty")
-        
-        with open(filepath, 'r', encoding='utf-8') as f:
+
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
             # Validación básica: debe contener "features"
-            if 'features' not in content.lower():
+            if "features" not in content.lower():
                 raise ValueError("Invalid UVL file: missing 'features' section")
-        
+
         return True
 
 
@@ -48,23 +50,23 @@ class GPXHandler(DataTypeHandler):
             raise ValueError("File not found")
         if os.path.getsize(filepath) == 0:
             raise ValueError("File is empty")
-        
+
         try:
             tree = ET.parse(filepath)
             root = tree.getroot()
-            
+
             # Verificar que es un archivo GPX válido
-            if not root.tag.endswith('gpx'):
+            if not root.tag.endswith("gpx"):
                 raise ValueError("Invalid GPX file: root element is not <gpx>")
-            
+
             # Verificar que tiene al menos un track o waypoint
-            namespaces = {'gpx': 'http://www.topografix.com/GPX/1/1'}
-            tracks = root.findall('.//gpx:trk', namespaces) or root.findall('.//trk')
-            waypoints = root.findall('.//gpx:wpt', namespaces) or root.findall('.//wpt')
-            
+            namespaces = {"gpx": "http://www.topografix.com/GPX/1/1"}
+            tracks = root.findall(".//gpx:trk", namespaces) or root.findall(".//trk")
+            waypoints = root.findall(".//gpx:wpt", namespaces) or root.findall(".//wpt")
+
             if not tracks and not waypoints:
                 raise ValueError("Invalid GPX file: no tracks or waypoints found")
-            
+
             return True
         except ET.ParseError as e:
             raise ValueError(f"Invalid GPX file: XML parsing error - {str(e)}")
@@ -73,7 +75,7 @@ class GPXHandler(DataTypeHandler):
 # === Descriptor de tipo de dataset ===
 class DatasetTypeDescriptor:
     """Descriptor completo de un tipo de dataset."""
-    
+
     def __init__(
         self,
         kind: str,
@@ -97,13 +99,6 @@ class DatasetTypeDescriptor:
         self.detail_template = detail_template
         self.icon = icon  # ✅ NUEVO
         self.color = color  # ✅ NUEVO
-
-
-# ✅ IMPORTAR los formularios
-from app.modules.dataset.forms import (
-    UVLFeatureModelForm,
-    GPXFeatureModelForm,
-)
 
 
 # === Registro global de tipos ===
@@ -147,11 +142,11 @@ def get_descriptor(kind: str) -> DatasetTypeDescriptor:
 def infer_kind_from_filename(filename: str) -> str:
     """Infiere el tipo de dataset desde la extensión del archivo."""
     _, ext = os.path.splitext(filename.lower())
-    
+
     for kind, descriptor in DATASET_TYPE_REGISTRY.items():
         if ext in descriptor.file_extensions:
             return kind
-    
+
     # Por defecto, retornar "base"
     return "base"
 

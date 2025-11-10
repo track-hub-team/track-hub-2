@@ -15,63 +15,63 @@
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ url_for('explore.index') }}">
-                    
+
                     <!-- Búsqueda -->
                     <div class="mb-3">
                         <label class="form-label">Search</label>
                         {{ form.query(class="form-control", placeholder="Search datasets...") }}
                     </div>
-                    
+
                     <!-- Tipo de dataset -->
                     <div class="mb-3">
                         <label class="form-label">Dataset Type</label>
                         {{ form.dataset_type(class="form-control", id="dataset-type-select") }}
                     </div>
-                    
+
                     <!-- Ordenamiento -->
                     <div class="mb-3">
                         <label class="form-label">Sort by</label>
                         {{ form.sorting(class="form-control") }}
                     </div>
-                    
+
                     <!-- Tipo de publicación -->
                     <div class="mb-3">
                         <label class="form-label">Publication Type</label>
                         {{ form.publication_type(class="form-control") }}
                     </div>
-                    
+
                     <!-- Tags -->
                     <div class="mb-3">
                         <label class="form-label">Tags</label>
                         {{ form.tags(class="form-control", placeholder="tag1, tag2") }}
                     </div>
-                    
+
                     <hr>
-                    
+
                     <!-- Filtros específicos para GPX -->
                     <div id="gpx-filters" style="display: none;">
                         <h6>GPS Track Filters</h6>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Activity Type</label>
                             {{ form.activity_type(class="form-control") }}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Min Distance (km)</label>
                             {{ form.min_distance(class="form-control") }}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Max Distance (km)</label>
                             {{ form.max_distance(class="form-control") }}
                         </div>
                     </div>
-                    
+
                     <button type="submit" class="btn btn-primary w-100">
                         <i data-feather="search"></i> Search
                     </button>
-                    
+
                     <a href="{{ url_for('explore.index') }}" class="btn btn-outline-secondary w-100 mt-2">
                         Clear filters
                     </a>
@@ -79,13 +79,13 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Resultados -->
     <div class="col-md-9">
         <div class="mb-3">
             <p class="text-muted">Found {{ datasets|length }} dataset(s)</p>
         </div>
-        
+
         {% if datasets %}
             <div class="row">
                 {% for dataset in datasets %}
@@ -107,21 +107,21 @@
                                         {{ dataset.get_cleaned_publication_type() }}
                                     </span>
                                 </div>
-                                
+
                                 <h5 class="card-title">{{ dataset.ds_meta_data.title }}</h5>
                                 <p class="card-text text-muted small">
                                     {{ dataset.ds_meta_data.description[:100] }}{% if dataset.ds_meta_data.description|length > 100 %}...{% endif %}
                                 </p>
-                                
+
                                 <!-- Info específica por tipo -->
                                 <div class="mb-2 small">
                                     <i data-feather="file"></i> {{ dataset.get_files_count() }} file(s)
                                     <br>
                                     <i data-feather="download"></i> {{ dataset.get_file_total_size_for_human() }}
                                 </div>
-                                
+
                                 <!-- ✅ Los datasets públicos se ven por DOI -->
-                                <a href="{{ dataset.get_uvlhub_doi() }}" 
+                                <a href="{{ dataset.get_uvlhub_doi() }}"
                                    class="btn btn-sm btn-outline-primary w-100">
                                     View dataset
                                 </a>
@@ -146,7 +146,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const datasetTypeSelect = document.getElementById('dataset-type-select');
     const gpxFilters = document.getElementById('gpx-filters');
-    
+
     function toggleGpxFilters() {
         if (datasetTypeSelect.value === 'gpx') {
             gpxFilters.style.display = 'block';
@@ -154,10 +154,10 @@ document.addEventListener('DOMContentLoaded', function() {
             gpxFilters.style.display = 'none';
         }
     }
-    
+
     datasetTypeSelect.addEventListener('change', toggleGpxFilters);
     toggleGpxFilters();
-    
+
     feather.replace();
 });
 </script>

@@ -1,11 +1,32 @@
 {% extends "base_template.html" %}
 
-{% block title %}View zenodo{% endblock %}
+{% block title %}Zenodo / Fakenodo Demo{% endblock %}
 
 {% block content %}
+<div class="container" style="max-width:900px;padding:1rem;">
+  <h1>Demo visual: Zenodo / Fakenodo</h1>
+  <p>Este flujo crea una deposición, la muestra, sube un fichero, la vuelve a mostrar y finalmente la elimina.</p>
 
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0;">
+    <button type="button" onclick="runZenodoDemo()">Ejecutar demo paso a paso</button>
+    <button type="button" onclick="clearOutput()">Limpiar</button>
+    <button type="button" onclick="test_zenodo_connection()">Test rápido (E2E)</button>
+  </div>
+
+  <div id="status" style="margin:0.5rem 0;font-weight:bold;"></div>
+  <ol id="steps" style="padding-left:1.2rem;"></ol>
+
+  <div id="test_zenodo_connection_error"
+       style="display:none;color:#b71c1c;margin-top:1rem;font-weight:bold;">
+    ❌ Error al conectar con Zenodo/Fakenodo. Revisa la consola.
+  </div>
+  <div id="test_zenodo_connection_success"
+       style="display:none;color:#1b5e20;margin-top:0.5rem;font-weight:bold;">
+    ✅ Conexión exitosa con Zenodo/Fakenodo.
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('zenodo.scripts') }}"></script>
+  <script src="{{ url_for('zenodo.scripts') }}"></script>
 {% endblock %}

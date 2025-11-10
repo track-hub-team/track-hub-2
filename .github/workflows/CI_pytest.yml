@@ -1,0 +1,127 @@
+# ----------------------------------------------------------------------------
+# Stage 3: Testing Workflow
+# This workflow runs the complete test suite with coverage analysis.
+#
+# Features:
+# - Runs all pytest tests (excluding Selenium)
+# - Generates coverage report
+# - Enforces minimum 50% coverage threshold
+# - Uploads coverage to Codecov
+# - Generates test summary report
+# ----------------------------------------------------------------------------
+
+name: Stage 3 - Testing
+
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  test:
+    name: Run Tests with Coverage
+    runs-on: ubuntu-24.04
+
+    env:
+      MARIADB_ROOT_PASSWORD: uvlhub_root_password
+      MARIADB_DATABASE: uvlhubdb_test
+      MARIADB_TEST_DATABASE: uvlhubdb_test
+      MARIADB_USER: uvlhub_user
+      MARIADB_PASSWORD: uvlhub_password
+      MARIADB_HOSTNAME: 127.0.0.1
+      MARIADB_PORT: 3306
+      FLASK_ENV: testing
+      WORKING_DIR: ""
+
+    services:
+      mariadb:
+        image: mariadb:12.0.2
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -u root -p$MARIADB_ROOT_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Delete rosemary editable mode
+        run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests (feature branches)
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/trunk'
+        run: |
+          pytest app/modules/ \
+            --ignore-glob='*selenium*' \
+            -v
+
+      - name: Run tests with coverage (trunk/main)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        run: |
+          pytest app/modules/ \
+            --ignore-glob='*selenium*' \
+            --cov=app/modules \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --cov-fail-under=50 \
+            --junitxml=pytest-report.xml \
+            -v
+
+      - name: Coverage Summary
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage to Codecov
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage reports
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            htmlcov/
+            pytest-report.xml
+          retention-days: 30
+
+      - name: Publish test results
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/trunk'
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: pytest-report.xml
+          check_name: Test Results

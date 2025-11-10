@@ -1,0 +1,44 @@
+# ----------------------------------------------------------------------------
+# CI Gate - Required Status Check
+# This workflow acts as a single required status check for branch protection.
+#
+# Purpose:
+# - Waits for all CI stages to complete successfully
+# - Provides a single "gate" for merge approval
+# - Simplifies branch protection rules
+# ----------------------------------------------------------------------------
+
+name: CI Gate
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  ci-gate:
+    name: CI Gate - All Checks Must Pass
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Wait for CI workflows to complete
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.ref }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          running-workflow-name: 'CI Gate - All Checks Must Pass'
+          check-regexp: '^(Validate Commits and Branch Names|Linting and Formatting|Run Tests with Coverage|Dependency Vulnerability Scan)$'
+
+      - name: CI Gate Passed
+        run: |
+          echo "## ✅ CI Gate Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All required CI stages completed successfully:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Stage 1: Commit Validation" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Stage 2: Code Quality" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Stage 3: Testing" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Stage 4: Security" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This branch is ready to merge" >> $GITHUB_STEP_SUMMARY

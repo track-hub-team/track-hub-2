@@ -21,12 +21,12 @@
                     <li class="breadcrumb-item active">Versions</li>
                 </ol>
             </nav>
-            
+
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="h3">
                     <i data-feather="clock"></i> Version History
                 </h1>
-                
+
                 <!-- ✅ CAMBIO: Solo mostrar botón si:
                      - Usuario autenticado
                      - Es el propietario
@@ -44,7 +44,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Lista de versiones -->
     <div class="row">
         <div class="col-lg-10 offset-lg-1">
@@ -60,22 +60,22 @@
                                     {{ version.title }}
                                 </h5>
                                 <p class="text-muted mb-2">
-                                    <i data-feather="user" style="width: 14px;"></i> 
+                                    <i data-feather="user" style="width: 14px;"></i>
                                     {{ version.created_by.profile.name if version.created_by else 'Unknown' }}
-                                    • 
+                                    •
                                     <i data-feather="calendar" style="width: 14px;"></i>
                                     {{ version.created_at.strftime('%B %d, %Y at %H:%M') }}
                                 </p>
                             </div>
-                            
+
                             {% if loop.index > 1 %}
-                            <a href="{{ url_for('dataset.compare_versions', version1_id=versions[loop.index - 1].id, version2_id=version.id) }}" 
+                            <a href="{{ url_for('dataset.compare_versions', version1_id=versions[loop.index - 1].id, version2_id=version.id) }}"
                                class="btn btn-sm btn-outline-primary">
                                 <i data-feather="git-compare"></i> Compare with previous
                             </a>
                             {% endif %}
                         </div>
-                        
+
                         <!-- Changelog -->
                         <div class="mt-3">
                             <h6><i data-feather="file-text"></i> Changes:</h6>
@@ -83,7 +83,7 @@
                                 <pre class="mb-0" style="white-space: pre-wrap;">{{ version.changelog }}</pre>
                             </div>
                         </div>
-                        
+
                         <!-- Métricas GPX -->
                         {% if version.version_type == 'gpx' %}
                         <div class="mt-3">
@@ -116,7 +116,7 @@
                             </div>
                         </div>
                         {% endif %}
-                        
+
                         <!-- Métricas UVL -->
                         {% if version.version_type == 'uvl' %}
                         <div class="mt-3">
@@ -143,7 +143,7 @@
                             </div>
                         </div>
                         {% endif %}
-                        
+
                         <!-- Files snapshot -->
                         <div class="mt-3">
                             <h6><i data-feather="folder"></i> Files ({{ version.files_snapshot|length }}):</h6>
@@ -151,7 +151,7 @@
                                 {% for filename, info in version.files_snapshot.items() %}
                                 <li class="text-muted">
                                     <i data-feather="file" style="width: 14px;"></i>
-                                    {{ filename }} 
+                                    {{ filename }}
                                     <small>({{ (info.size / 1024)|round(1) }} KB)</small>
                                 </li>
                                 {% endfor %}
@@ -191,7 +191,7 @@
                         <i data-feather="info"></i>
                         <small>A snapshot of the current state will be saved.</small>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Version Type</label>
                         <select class="form-select" name="bump_type" id="bump_type">
@@ -203,14 +203,14 @@
                             Current version: <strong>v{{ dataset.get_latest_version().version_number if dataset.get_latest_version() else '0.0.0' }}</strong>
                         </small>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="changelog" class="form-label">Changelog <span class="text-danger">*</span></label>
-                        <textarea 
-                            class="form-control" 
-                            id="changelog" 
-                            name="changelog" 
-                            rows="4" 
+                        <textarea
+                            class="form-control"
+                            id="changelog"
+                            name="changelog"
+                            rows="4"
                             required
                             placeholder="Describe what changed...&#10;&#10;Example:&#10;- Added 2 new tracks&#10;- Fixed elevation data&#10;- Updated metadata"></textarea>
                     </div>

@@ -7,15 +7,20 @@ import xml.etree.ElementTree as ET
 from typing import Optional
 
 from flask import request
-from app import db
 
+from app import db
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import (
-    UVLDataset,
-    GPXDataset,
+    BaseDataset,
+    DatasetVersion,
     DSMetaData,
     DSViewRecord,
+    GPXDataset,
+    GPXDatasetVersion,
+    UVLDataset,
+    UVLDatasetVersion,
 )
+from app.modules.dataset.registry import get_descriptor, infer_kind_from_filename
 from app.modules.dataset.repositories import (
     AuthorRepository,
     DataSetRepository,
@@ -28,10 +33,8 @@ from app.modules.featuremodel.repositories import FeatureModelRepository, FMMeta
 from app.modules.hubfile.repositories import (
     HubfileDownloadRecordRepository,
     HubfileRepository,
-    HubfileViewRecordRepository,
 )
 from core.services.BaseService import BaseService
-from app.modules.dataset.models import DatasetVersion, GPXDatasetVersion, UVLDatasetVersion, BaseDataset
 
 logger = logging.getLogger(__name__)
 
@@ -92,25 +95,17 @@ class DataSetService(BaseService):
 
     def move_feature_models(self, dataset: BaseDataset):
         """Mueve los archivos de feature models desde la carpeta temporal a la definitiva."""
-        from app.modules.auth.services import AuthenticationService
-        import shutil
-        
         current_user = AuthenticationService().get_authenticated_user()
         source_dir = current_user.temp_folder()
-        
+
         working_dir = os.getenv("WORKING_DIR", "")
-        dest_dir = os.path.join(
-            working_dir,
-            "uploads",
-            f"user_{current_user.id}",
-            f"dataset_{dataset.id}"
-        )
+        dest_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
         os.makedirs(dest_dir, exist_ok=True)
 
         for feature_model in dataset.feature_models:
             filename = feature_model.fm_meta_data.filename
             source_path = os.path.join(source_dir, filename)
-            
+
             if os.path.exists(source_path):
                 shutil.move(source_path, dest_dir)
             else:
@@ -167,8 +162,6 @@ class DataSetService(BaseService):
 
     def create_from_form(self, form, current_user) -> BaseDataset:
         """Crea un dataset desde el formulario."""
-        from app.modules.dataset.registry import infer_kind_from_filename, get_descriptor
-        
         logger.info("Creating dataset from form...")
 
         if not form.feature_models or len(form.feature_models) == 0:
@@ -183,21 +176,19 @@ class DataSetService(BaseService):
         if form.feature_models:
             first_file = form.feature_models[0].filename.data
             dataset_kind = infer_kind_from_filename(first_file)
-        
+
         # 3. Obtener descriptor y crear instancia del tipo correcto
         descriptor = get_descriptor(dataset_kind)
-        
+
         try:
             dataset = descriptor.model_class(
-                user_id=current_user.id,
-                ds_meta_data_id=dsmetadata.id,
-                dataset_kind=dataset_kind
+                user_id=current_user.id, ds_meta_data_id=dsmetadata.id, dataset_kind=dataset_kind
             )
-            
+
             # Añadir a la sesión y hacer flush para obtener el ID
             self.repository.session.add(dataset)
             self.repository.session.flush()
-            
+
         except Exception as exc:
             logger.error(f"Error creating dataset: {exc}")
             self.dsmetadata_repository.session.rollback()
@@ -211,21 +202,19 @@ class DataSetService(BaseService):
         # 5. Procesar feature models (archivos)
         for feature_model_form in form.feature_models:
             filename = feature_model_form.filename.data
-            
+
             # ✅ Validar que el filename no esté vacío
             if not filename:
                 logger.warning("Skipping feature model with empty filename")
                 continue
-            
+
             # Crear FM metadata
             fmmetadata_dict = feature_model_form.get_fmmetadata()
             fmmetadata = self.fmmetadata_repository.create(commit=False, **fmmetadata_dict)
 
             # Crear feature model
             fm = self.feature_model_repository.create(
-                commit=False,
-                data_set_id=dataset.id,
-                fm_meta_data_id=fmmetadata.id
+                commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
             )
 
             # Crear autores del feature model
@@ -236,7 +225,7 @@ class DataSetService(BaseService):
             # Validar archivo según su tipo
             file_path = os.path.join(current_user.temp_folder(), filename)
             descriptor_for_file = get_descriptor(infer_kind_from_filename(filename))
-            
+
             try:
                 descriptor_for_file.handler.validate(file_path)
             except Exception as e:
@@ -249,11 +238,7 @@ class DataSetService(BaseService):
 
             # Crear registro de archivo
             file = self.hubfilerepository.create(
-                commit=False,
-                name=filename,
-                checksum=checksum,
-                size=size,
-                feature_model_id=fm.id
+                commit=False, name=filename, checksum=checksum, size=size, feature_model_id=fm.id
             )
             fm.files.append(file)
 
@@ -265,13 +250,13 @@ class DataSetService(BaseService):
                 dataset=dataset,
                 changelog="Initial version (automatically generated)",
                 user=current_user,
-                bump_type='patch'
+                bump_type="patch",
             )
             logger.info(f"Created initial version {version.version_number} for dataset {dataset.id}")
         except Exception as e:
             logger.error(f"Could not create initial version for dataset {dataset.id}: {str(e)}")
             # No hacer rollback, el dataset ya está creado
-        
+
         return dataset
 
     def update_dsmetadata(self, id, **kwargs):
@@ -280,36 +265,36 @@ class DataSetService(BaseService):
     def get_uvlhub_doi(self, dataset: BaseDataset) -> str:
         domain = os.getenv("DOMAIN", "localhost")
         return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
-    
+
+
 class VersionService:
     """Servicio para gestionar versiones de datasets"""
-    
+
     @staticmethod
-    def create_version(dataset: BaseDataset, changelog: str, user, bump_type: str = 'patch') -> DatasetVersion:
+    def create_version(dataset: BaseDataset, changelog: str, user, bump_type: str = "patch") -> DatasetVersion:
         """
         Crear una nueva versión del dataset.
         Captura el estado actual y lo guarda como snapshot.
-        
+
         Args:
             dataset: Dataset a versionar
             changelog: Descripción de cambios
             user: Usuario que crea la versión
-            bump_type: Tipo de incremento ('major', 'minor', 'patch')  
+            bump_type: Tipo de incremento ('major', 'minor', 'patch')
         """
         # Obtener la última versión para incrementar
         last_version = dataset.get_latest_version()
-        
+
         new_version_number = VersionService._increment_version(
-            last_version.version_number if last_version else "0.0.0",
-            bump_type  # Pasar el tipo de incremento
+            last_version.version_number if last_version else "0.0.0", bump_type  # Pasar el tipo de incremento
         )
-        
+
         # Crear snapshot de archivos actuales
         files_snapshot = VersionService._create_files_snapshot(dataset)
-        
+
         # Determinar la clase de versión según tipo de dataset
         version_class = VersionService._get_version_class(dataset)
-        
+
         # Crear la versión
         version = version_class(
             dataset_id=dataset.id,
@@ -318,9 +303,9 @@ class VersionService:
             description=dataset.ds_meta_data.description,
             files_snapshot=files_snapshot,
             changelog=changelog,
-            created_by_id=user.id
+            created_by_id=user.id,
         )
-        
+
         # Calcular métricas específicas según tipo
         if isinstance(dataset, GPXDataset):
             version.total_distance = dataset.calculate_total_distance()
@@ -328,77 +313,73 @@ class VersionService:
             version.total_elevation_loss = dataset.calculate_total_elevation_loss()
             version.total_points = dataset.count_total_points()
             version.track_count = dataset.count_tracks()
-        
+
         elif isinstance(dataset, UVLDataset):
             try:
                 version.total_features = dataset.calculate_total_features() or 0
                 version.total_constraints = dataset.calculate_total_constraints() or 0
-                
-                if hasattr(dataset.feature_models, 'count'):
+
+                if hasattr(dataset.feature_models, "count"):
                     # Es una query de SQLAlchemy
                     version.model_count = dataset.feature_models.count()
                 else:
                     # Es una lista Python
                     version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
-                    
+
             except Exception as e:
                 logger.warning(f"Could not calculate UVL metrics for dataset {dataset.id}: {str(e)}")
                 version.total_features = 0
                 version.total_constraints = 0
                 version.model_count = 0
-        
+
         db.session.add(version)
         db.session.commit()
-        
+
         return version
-    
+
     @staticmethod
     def _get_version_class(dataset):
         """Retornar la clase de versión apropiada según tipo de dataset"""
         version_classes = {
-            'gpx': GPXDatasetVersion,
-            'uvl': UVLDatasetVersion,
+            "gpx": GPXDatasetVersion,
+            "uvl": UVLDatasetVersion,
         }
         return version_classes.get(dataset.dataset_kind, DatasetVersion)
-    
+
     @staticmethod
     def _create_files_snapshot(dataset):
         """Crear un snapshot JSON de todos los archivos actuales"""
         snapshot = {}
         for fm in dataset.feature_models:
-            if hasattr(fm, 'files'):
+            if hasattr(fm, "files"):
                 for file in fm.files:
-                    snapshot[file.name] = {
-                        'id': file.id,
-                        'checksum': file.checksum,
-                        'size': file.size
-                    }
+                    snapshot[file.name] = {"id": file.id, "checksum": file.checksum, "size": file.size}
         return snapshot
-    
+
     @staticmethod
-    def _increment_version(version_str: str, bump_type: str = 'patch') -> str:
+    def _increment_version(version_str: str, bump_type: str = "patch") -> str:
         """
         Incrementar versión semántica.
         bump_type: 'major', 'minor', 'patch'
         """
-        major, minor, patch = map(int, version_str.split('.'))
-        
-        if bump_type == 'major':
+        major, minor, patch = map(int, version_str.split("."))
+
+        if bump_type == "major":
             return f"{major + 1}.0.0"
-        elif bump_type == 'minor':
+        elif bump_type == "minor":
             return f"{major}.{minor + 1}.0"
         else:  # patch
             return f"{major}.{minor}.{patch + 1}"
-    
+
     @staticmethod
     def compare_versions(version1_id: int, version2_id: int):
         """Comparar dos versiones de un dataset"""
         version1 = DatasetVersion.query.get_or_404(version1_id)
         version2 = DatasetVersion.query.get_or_404(version2_id)
-        
+
         if version1.dataset_id != version2.dataset_id:
             raise ValueError("Versions must belong to the same dataset")
-        
+
         # La versión más reciente compara con la más antigua
         if version1.created_at > version2.created_at:
             return version1.compare_with(version2)
