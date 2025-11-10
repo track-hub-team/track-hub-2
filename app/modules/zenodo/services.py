@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from flask import Response, jsonify
 from flask_login import current_user
 
-from app.modules.dataset.models import DataSet
+from app.modules.dataset.models import BaseDataset
 from app.modules.featuremodel.models import FeatureModel
 from app.modules.zenodo.repositories import ZenodoRepository
 from core.configuration.configuration import uploads_folder_name
@@ -165,7 +165,7 @@ class ZenodoService(BaseService):
             raise Exception("Failed to get depositions")
         return response.json()
 
-    def create_new_deposition(self, dataset: DataSet) -> dict:
+    def create_new_deposition(self, dataset: BaseDataset) -> dict:
         """
         Crea una nueva deposición usando los metadatos de un DataSet.
         """
@@ -205,14 +205,15 @@ class ZenodoService(BaseService):
             raise Exception(error_message)
         return response.json()
 
-    def upload_file(self, dataset: DataSet, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
+    def upload_file(self, dataset: BaseDataset, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
         """
         Sube un fichero a una deposición existente.
         """
-        uvl_filename = feature_model.fm_meta_data.uvl_filename
-        data = {"name": uvl_filename}
+        filename = feature_model.fm_meta_data.filename
+        data = {"name": filename}
         user_id = current_user.id if user is None else user.id
-        file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", uvl_filename)
+        file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", filename)
+        files = {"file": open(file_path, "rb")}
 
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
         try:

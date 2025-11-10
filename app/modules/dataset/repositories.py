@@ -5,7 +5,14 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.dataset.models import (
+    Author,
+    BaseDataset,   # 👈 usar el mapper base para consultas polimórficas
+    DOIMapping,
+    DSMetaData,
+    DSDownloadRecord,
+    DSViewRecord,
+)
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -41,14 +48,14 @@ class DSViewRecordRepository(BaseRepository):
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0
 
-    def the_record_exists(self, dataset: DataSet, user_cookie: str):
+    def the_record_exists(self, dataset: BaseDataset, user_cookie: str):
         return self.model.query.filter_by(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
             view_cookie=user_cookie,
         ).first()
 
-    def create_new_record(self, dataset: DataSet, user_cookie: str) -> DSViewRecord:
+    def create_new_record(self, dataset: BaseDataset, user_cookie: str) -> DSViewRecord:
         return self.create(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
@@ -59,28 +66,33 @@ class DSViewRecordRepository(BaseRepository):
 
 class DataSetRepository(BaseRepository):
     def __init__(self):
-        super().__init__(DataSet)
+        # 👇 Usar BaseDataset para que el ORM devuelva la subclase correcta (uvl/gpx/base)
+        super().__init__(BaseDataset)
 
-    def get_synchronized(self, current_user_id: int) -> DataSet:
+    def get_synchronized(self, current_user_id: int):
         return (
             self.model.query.join(DSMetaData)
-            .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
+            .filter(BaseDataset.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
             .order_by(self.model.created_at.desc())
             .all()
         )
 
-    def get_unsynchronized(self, current_user_id: int) -> DataSet:
+    def get_unsynchronized(self, current_user_id: int):
         return (
             self.model.query.join(DSMetaData)
-            .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
+            .filter(BaseDataset.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
             .order_by(self.model.created_at.desc())
             .all()
         )
 
-    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int) -> DataSet:
+    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int):
         return (
             self.model.query.join(DSMetaData)
-            .filter(DataSet.user_id == current_user_id, DataSet.id == dataset_id, DSMetaData.dataset_doi.is_(None))
+            .filter(
+                BaseDataset.user_id == current_user_id,
+                BaseDataset.id == dataset_id,
+                DSMetaData.dataset_doi.is_(None),
+            )
             .first()
         )
 

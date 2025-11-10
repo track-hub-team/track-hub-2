@@ -17,21 +17,30 @@ class FeatureModel(db.Model):
 
 class FMMetaData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    uvl_filename = db.Column(db.String(120), nullable=False)
+    
+    filename = db.Column(db.String(120), nullable=False)  # antes: uvl_filename
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
     publication_type = db.Column(SQLAlchemyEnum(PublicationType), nullable=False)
     publication_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
-    uvl_version = db.Column(db.String(120))
+    
+    file_version = db.Column(db.String(120))  # antes: uvl_version
+    
     fm_metrics_id = db.Column(db.Integer, db.ForeignKey("fm_metrics.id"))
-    fm_metrics = db.relationship("FMMetrics", uselist=False, backref="fm_meta_data")
+    fm_metrics = db.relationship("FMMetrics", uselist=False, backref="fm_meta_data", cascade="all, delete")
+    
+    # Relación con autores
     authors = db.relationship(
-        "Author", backref="fm_metadata", lazy=True, cascade="all, delete", foreign_keys=[Author.fm_meta_data_id]
+        "Author",
+        backref="fm_metadata",
+        lazy=True,
+        cascade="all, delete",
+        foreign_keys="Author.fm_meta_data_id"
     )
 
     def __repr__(self):
-        return f"FMMetaData<{self.title}"
+        return f"FMMetaData<{self.title}>"
 
 
 class FMMetrics(db.Model):

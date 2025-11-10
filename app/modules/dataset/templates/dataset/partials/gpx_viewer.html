@@ -1,0 +1,270 @@
+<div class="card">
+    <div class="card-body">
+        <h3 class="mb-4">
+            <i data-feather="map"></i> GPS Track Visualization
+        </h3>
+        
+        <!-- ✅ Selector de tracks con pestañas -->
+        <div class="mb-4 border-bottom">
+            <nav class="nav nav-tabs" id="track-tabs" role="tablist" style="border: none;">
+                {% set first_tab_found = namespace(value=False) %}
+                {% for fm in dataset.feature_models %}
+                    {% if fm.files %}
+                        {% for file in fm.files %}
+                            {% if file.name.lower().endswith('.gpx') %}
+                            <button 
+                                class="nav-link track-tab {% if not first_tab_found.value %}active{% endif %}"
+                                data-track-id="{{ fm.fm_meta_data_id }}"
+                                data-track-name="{{ file.name }}"
+                                type="button"
+                                role="tab"
+                                style="border-radius: 8px 8px 0 0; margin-right: 4px;"
+                            >
+                                <i data-feather="file" style="width: 14px; height: 14px;"></i>
+                                {{ file.name }}
+                            </button>
+                            {% set first_tab_found.value = True %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </nav>
+        </div>
+        
+        <!-- Mapa -->
+        <div id="gpx-map" style="height: 450px; width: 100%; border-radius: 8px; margin-bottom: 20px;"></div>
+        
+        <!-- Estadísticas del track activo -->
+        <div id="track-stats" class="row text-center">
+            <!-- Se rellenará dinámicamente con JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Variables globales
+let map;
+let currentTrackLayer;
+let startMarker;
+let endMarker;
+
+/**
+ * Inicializar el mapa de Leaflet
+ */
+function initMap() {
+    if (map) {
+        map.remove();
+    }
+    
+    map = L.map('gpx-map').setView([40.4168, -3.7038], 6);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+}
+
+/**
+ * Cargar y mostrar un track GPX
+ */
+async function loadTrack(fileId, fileName) {
+    try {
+        // Mostrar loading
+        document.getElementById('track-stats').innerHTML = 
+            '<div class="col-12 text-center py-4">' +
+                '<div class="spinner-border text-primary" role="status">' +
+                    '<span class="visually-hidden">Loading...</span>' +
+                '</div>' +
+                '<p class="mt-2 text-muted">Loading track...</p>' +
+            '</div>';
+        
+        // Obtener datos del GPX
+        const response = await fetch('/api/gpx/' + fileId);
+        if (!response.ok) {
+            throw new Error('HTTP error! status: ' + response.status);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Limpiar capas anteriores
+        if (currentTrackLayer) map.removeLayer(currentTrackLayer);
+        if (startMarker) map.removeLayer(startMarker);
+        if (endMarker) map.removeLayer(endMarker);
+        
+        // Dibujar el track
+        currentTrackLayer = L.polyline(data.coordinates, {
+            color: '#0d6efd',
+            weight: 3,
+            opacity: 0.7
+        }).addTo(map);
+        
+        // Añadir marcadores de inicio y fin
+        if (data.coordinates.length > 0) {
+            const startCoord = data.coordinates[0];
+            const endCoord = data.coordinates[data.coordinates.length - 1];
+            
+            // Marcador verde de inicio
+            startMarker = L.marker(startCoord, {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map).bindPopup('<b>Start</b><br>' + fileName);
+            
+            // Marcador rojo de fin
+            endMarker = L.marker(endCoord, {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map).bindPopup('<b>Finish</b><br>' + fileName);
+        }
+        
+        // Ajustar vista al track
+        map.fitBounds(currentTrackLayer.getBounds(), { padding: [50, 50] });
+        
+        // Mostrar estadísticas
+        displayStats(data, fileName);
+        
+    } catch (error) {
+        console.error('Error loading track:', error);
+        document.getElementById('track-stats').innerHTML = 
+            '<div class="col-12">' +
+                '<div class="alert alert-danger" role="alert">' +
+                    '<i data-feather="alert-circle"></i>' +
+                    '<strong>Error loading track:</strong> ' + error.message +
+                '</div>' +
+            '</div>';
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+}
+
+/**
+ * Mostrar estadísticas del track
+ */
+function displayStats(data, fileName) {
+    const stats = [
+        {
+            icon: 'trending-up',
+            label: 'Distance',
+            value: (data.distance / 1000).toFixed(2) + ' km',
+            colorClass: 'text-primary'
+        },
+        {
+            icon: 'bar-chart-2',
+            label: 'Elevation Gain',
+            value: data.elevation_gain.toFixed(0) + ' m',
+            colorClass: 'text-success'
+        },
+        {
+            icon: 'arrow-down',
+            label: 'Elevation Loss',
+            value: data.elevation_loss.toFixed(0) + ' m',
+            colorClass: 'text-danger'
+        },
+        {
+            icon: 'clock',
+            label: 'Duration',
+            value: formatDuration(data.duration),
+            colorClass: 'text-info'
+        },
+        {
+            icon: 'map-pin',
+            label: 'Points',
+            value: data.points_count,
+            colorClass: 'text-warning'
+        }
+    ];
+    
+    document.getElementById('track-stats').innerHTML = stats.map(function(stat) {
+        return '<div class="col-md-2 col-6 mb-3">' +
+                '<div class="border rounded p-3 h-100">' +
+                    '<i data-feather="' + stat.icon + '" class="' + stat.colorClass + '"></i>' +
+                    '<h4 class="mt-2 mb-0">' + stat.value + '</h4>' +
+                    '<small class="text-muted">' + stat.label + '</small>' +
+                '</div>' +
+            '</div>';
+    }).join('');
+    
+    // Reemplazar iconos de Feather
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+/**
+ * Formatear duración en formato legible
+ */
+function formatDuration(seconds) {
+    if (!seconds || seconds === 0) return 'N/A';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+        return hours + 'h ' + minutes + 'm';
+    }
+    return minutes + 'm';
+}
+
+/**
+ * Inicializar el selector de tracks
+ */
+function initTrackSelector() {
+    const tabs = document.querySelectorAll('.track-tab');
+    
+    if (tabs.length === 0) {
+        console.warn('No GPX tracks found');
+        return;
+    }
+    
+    // Cargar el primer track por defecto
+    const firstTab = tabs[0];
+    const firstTrackId = firstTab.dataset.trackId;
+    const firstTrackName = firstTab.dataset.trackName;
+    loadTrack(firstTrackId, firstTrackName);
+    
+    // Event listeners para los tabs
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            // Remover clase activa de todos los tabs
+            tabs.forEach(function(t) {
+                t.classList.remove('active');
+            });
+            
+            // Añadir clase activa al tab clickeado
+            this.classList.add('active');
+            
+            // Cargar el track
+            const trackId = this.dataset.trackId;
+            const trackName = this.dataset.trackName;
+            loadTrack(trackId, trackName);
+        });
+    });
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('gpx-map')) {
+        initMap();
+        initTrackSelector();
+    }
+});
+</script>

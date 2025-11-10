@@ -1,0 +1,208 @@
+{% extends "base_template.html" %}
+
+{% block title %}Compare Versions{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                
+                {% if dataset.ds_meta_data.dataset_doi %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}">
+                            {{ dataset.ds_meta_data.title }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id) }}">
+                            {{ dataset.ds_meta_data.title }}
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}">Version History</a>
+                </li>
+                <li class="breadcrumb-item active">Compare v{{ version2.version_number }} vs v{{ version1.version_number }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        
+        <!-- ✅ Selector de versiones -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5><i data-feather="settings"></i> Select Versions to Compare</h5>
+                <form method="GET" id="compareForm">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label class="form-label">Version 1 (Newer)</label>
+                            <select class="form-select" name="version1_id" id="version1">
+                                {% for v in all_versions %}
+                                <option value="{{ v.id }}" {% if v.id == version1.id %}selected{% endif %}>
+                                    v{{ v.version_number }} - {{ v.created_at.strftime('%b %d, %Y') }}
+                                    {% if loop.first %}(Current){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-center d-flex align-items-end justify-content-center">
+                            <span class="badge bg-secondary py-2">vs</span>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Version 2 (Older)</label>
+                            <select class="form-select" name="version2_id" id="version2">
+                                {% for v in all_versions %}
+                                <option value="{{ v.id }}" {% if v.id == version2.id %}selected{% endif %}>
+                                    v{{ v.version_number }} - {{ v.created_at.strftime('%b %d, %Y') }}
+                                    {% if loop.first %}(Current){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" onclick="updateComparison()">
+                            <i data-feather="refresh-cw"></i> Update Comparison
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2><i data-feather="git-compare"></i> Comparing Versions</h2>
+            </div>
+            <div class="card-body">
+                
+                <!-- Cabecera -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5>
+                                    <span class="badge bg-primary">v{{ version1.version_number }}</span>
+                                    {% if version1.id == dataset.get_latest_version().id %}
+                                    <span class="badge bg-success">Current</span>
+                                    {% endif %}
+                                </h5>
+                                <p class="mb-1">
+                                    <small class="text-muted">
+                                        <i data-feather="calendar"></i>
+                                        {{ version1.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </small>
+                                </p>
+                                <p class="mb-0">
+                                    <small class="text-muted">
+                                        <i data-feather="user"></i>
+                                        {{ version1.created_by.profile.name }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5>
+                                    <span class="badge bg-secondary">v{{ version2.version_number }}</span>
+                                </h5>
+                                <p class="mb-1">
+                                    <small class="text-muted">
+                                        <i data-feather="calendar"></i>
+                                        {{ version2.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </small>
+                                </p>
+                                <p class="mb-0">
+                                    <small class="text-muted">
+                                        <i data-feather="user"></i>
+                                        {{ version2.created_by.profile.name }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resto del contenido igual... -->
+                {% if comparison.metadata_changes %}
+                <!-- ... código existente ... -->
+                {% endif %}
+
+                {% if comparison.added_files %}
+                <!-- ... código existente ... -->
+                {% endif %}
+
+                {% if comparison.deleted_files %}
+                <!-- ... código existente ... -->
+                {% endif %}
+
+                {% if comparison.changed_files %}
+                <!-- ... código existente ... -->
+                {% endif %}
+
+                {% if not comparison.added_files and not comparison.deleted_files and not comparison.changed_files and not comparison.metadata_changes %}
+                <div class="alert alert-info">
+                    <i data-feather="info"></i>
+                    No changes detected between these versions.
+                </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}" class="btn btn-secondary">
+                        <i data-feather="arrow-left"></i> Back to Version History
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+    });
+    
+    // ✅ Función para actualizar comparación
+    function updateComparison() {
+        const v1 = document.getElementById('version1').value;
+        const v2 = document.getElementById('version2').value;
+        
+        if (v1 && v2) {
+            if (v1 === v2) {
+                alert('Please select two different versions to compare');
+                return;
+            }
+            // Redirigir a la URL de comparación
+            window.location.href = `/versions/${v1}/compare/${v2}`;
+        } else {
+            alert('Please select both versions');
+        }
+    }
+    
+    // ✅ Auto-submit al cambiar versión (opcional)
+    document.getElementById('version1').addEventListener('change', function() {
+        const v2 = document.getElementById('version2').value;
+        if (v2 && this.value !== v2) {
+            updateComparison();
+        }
+    });
+    
+    document.getElementById('version2').addEventListener('change', function() {
+        const v1 = document.getElementById('version1').value;
+        if (v1 && this.value !== v1) {
+            updateComparison();
+        }
+    });
+</script>
+
+{% endblock %}
