@@ -3,10 +3,14 @@ services:
     container_name: web_app_container
     env_file:
       - ../.env
+    environment:
+      - MAIL_SERVER=mailhog
+      - MAIL_PORT=1025
     expose:
       - "5000"
     depends_on:
       - db
+      - mailhog
     build:
       context: ../
       dockerfile: docker/images/Dockerfile.dev
@@ -29,6 +33,15 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - uvlhub_network
+
+  mailhog:
+    container_name: mailhog_container
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - uvlhub_network
 
