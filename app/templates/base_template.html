@@ -110,6 +110,14 @@ chico sundermann">
                         </a>
                     </li>
 
+                    <li class="sidebar-item {{ 'active' if request.endpoint.startswith('dashboard.') else '' }}">
+                        <a class="sidebar-link" href="{{ url_for('dashboard.index') }}">
+                            <i class="align-middle" data-feather="bar-chart-2"></i> <span
+                                class="align-middle">My dashboard</span>
+                        </a>
+                    </li>
+
+
                     <li class="sidebar-header">
                         Options
                     </li>
