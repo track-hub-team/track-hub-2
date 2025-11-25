@@ -4,10 +4,10 @@ import os
 import shutil
 import uuid
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Optional
 
-from flask import current_app, request
+from flask import request
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
