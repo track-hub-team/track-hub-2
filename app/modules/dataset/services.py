@@ -4,17 +4,18 @@ import os
 import shutil
 import uuid
 import xml.etree.ElementTree as ET
-from typing import Optional
-from sqlalchemy.orm import selectinload
-from sqlalchemy import func
-from flask import current_app, request
 from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+from flask import current_app, request
+from sqlalchemy import func
+from sqlalchemy.orm import selectinload
+
 from app import db
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import (
     BaseDataset,
     DatasetVersion,
-    DSViewRecord,
     DSDownloadRecord,
     DSMetaData,
     DSViewRecord,
@@ -460,6 +461,7 @@ class SizeService:
         else:
             return f"{round(size / (1024 ** 3), 2)} GB"
 
+
 def trending(metric: str = "downloads", period: str = "week", limit: int = 10):
     """
     metric: 'downloads' | 'views' | 'score' | 'score_v2'
@@ -487,9 +489,9 @@ def trending(metric: str = "downloads", period: str = "week", limit: int = 10):
 
     # agregados (ventana) y (últimas 24h)
     views_p = agg_subq(DSViewRecord, "view_date", since_period, "views_p")
-    dls_p   = agg_subq(DSDownloadRecord, "download_date", since_period, "downloads_p")
+    dls_p = agg_subq(DSDownloadRecord, "download_date", since_period, "downloads_p")
     views_1d = agg_subq(DSViewRecord, "view_date", since_1d, "views_1d")
-    dls_1d   = agg_subq(DSDownloadRecord, "download_date", since_1d, "downloads_1d")
+    dls_1d = agg_subq(DSDownloadRecord, "download_date", since_1d, "downloads_1d")
 
     # columnas coalesce
     Vp = func.coalesce(views_p.c.views_p, 0)
@@ -509,9 +511,9 @@ def trending(metric: str = "downloads", period: str = "week", limit: int = 10):
         .join(DSMetaData, DSMetaData.id == BaseDataset.ds_meta_data_id)
         .filter(DSMetaData.dataset_doi.isnot(None))
         .outerjoin(views_p, views_p.c.dataset_id == BaseDataset.id)
-        .outerjoin(dls_p,  dls_p.c.dataset_id  == BaseDataset.id)
+        .outerjoin(dls_p, dls_p.c.dataset_id == BaseDataset.id)
         .outerjoin(views_1d, views_1d.c.dataset_id == BaseDataset.id)
-        .outerjoin(dls_1d,  dls_1d.c.dataset_id  == BaseDataset.id)
+        .outerjoin(dls_1d, dls_1d.c.dataset_id == BaseDataset.id)
     )
 
     # orden según métrica
@@ -532,22 +534,20 @@ def trending(metric: str = "downloads", period: str = "week", limit: int = 10):
 
     # precarga de metadata para títulos/autores en una sola query
     ids = [r.dataset_id for r in rows]
-    datasets = (
-        BaseDataset.query.options(selectinload(BaseDataset.ds_meta_data))
-        .filter(BaseDataset.id.in_(ids))
-        .all()
-    )
+    datasets = BaseDataset.query.options(selectinload(BaseDataset.ds_meta_data)).filter(BaseDataset.id.in_(ids)).all()
     ds_map = {d.id: d for d in datasets}
 
     results = []
     for r in rows:
         ds = ds_map.get(r.dataset_id)
         if ds:
-            results.append({
-                "dataset": ds,
-                "views": int(r.views or 0),
-                "downloads": int(r.downloads or 0),
-                "views_1d": int(r.views_1d or 0),
-                "downloads_1d": int(r.downloads_1d or 0),
-            })
+            results.append(
+                {
+                    "dataset": ds,
+                    "views": int(r.views or 0),
+                    "downloads": int(r.downloads or 0),
+                    "views_1d": int(r.views_1d or 0),
+                    "downloads_1d": int(r.downloads_1d or 0),
+                }
+            )
     return results
