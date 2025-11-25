@@ -105,6 +105,28 @@
                 </div>
             {% endfor %}
 
+
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                    <h2 class="h5 mb-0">Top 3 trending this week</h2>
+                    <a class="btn btn-sm btn-light"
+                        href="/explore?order=downloads&period=week">See all</a>
+                    </div>
+
+                    <ol class="mt-3 mb-0">
+                    {% for item in top3_trending %}
+                        <li>
+                        “{{ item.dataset.ds_meta_data.title }}” — {{ item.downloads }} downloads{% if item.downloads == 0 and item.views > 0 %} ({{ item.views }} views){% endif %}
+                        </li>
+                    {% else %}
+                        <li>No activity yet.</li>
+                    {% endfor %}
+                    </ol>
+                </div>
+            </div>
+
             <a href="/explore" class="btn btn-primary">
                 <i data-feather="search" class="center-button-icon"></i>
                 Explore more datasets
