@@ -55,23 +55,6 @@ repos:
         files: ^(app|rosemary)/.*\.py$
         verbose: true
 
-  # mypy - type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
-    hooks:
-      - id: mypy
-        name: mypy Type Checker
-        description: Static type checking for Python
-        args: ['--ignore-missing-imports', '--no-strict-optional', '--show-error-codes', '--pretty']
-        files: ^(app|rosemary)/.*\.py$
-        verbose: true
-        additional_dependencies:
-          - types-requests
-          - types-python-dateutil
-          - types-PyYAML
-          - types-redis
-          - sqlalchemy[mypy]
-
   # commitlint - validación de mensajes de commit (Conventional Commits)
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.16.0

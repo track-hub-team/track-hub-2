@@ -169,17 +169,16 @@ class ZenodoService(BaseService):
         """
         Crea una nueva deposición usando los metadatos de un DataSet.
         """
+        from datetime import datetime
+
         logger.info("Dataset sending to Zenodo...")
         logger.info("Publication type...%s", dataset.ds_meta_data.publication_type.value)
 
+        is_publication = dataset.ds_meta_data.publication_type.value != "none"
+
         metadata = {
             "title": dataset.ds_meta_data.title,
-            "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
-            "publication_type": (
-                dataset.ds_meta_data.publication_type.value
-                if dataset.ds_meta_data.publication_type.value != "none"
-                else None
-            ),
+            "upload_type": "dataset" if not is_publication else "publication",
             "description": dataset.ds_meta_data.description,
             "creators": [
                 {
@@ -195,6 +194,19 @@ class ZenodoService(BaseService):
             "access_right": "open",
             "license": "CC-BY-4.0",
         }
+
+        if is_publication:
+            metadata["publication_type"] = dataset.ds_meta_data.publication_type.value
+            metadata["publication_date"] = datetime.utcnow().strftime("%Y-%m-%d")
+
+            if dataset.ds_meta_data.publication_doi:
+                metadata["related_identifiers"] = [
+                    {
+                        "identifier": dataset.ds_meta_data.publication_doi,
+                        "relation": "isSupplementTo",
+                        "scheme": "doi",
+                    }
+                ]
 
         data = {"metadata": metadata}
         response = requests.post(
