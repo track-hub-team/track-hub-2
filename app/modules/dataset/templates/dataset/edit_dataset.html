@@ -100,8 +100,17 @@
                             id="files"
                             name="files"
                             multiple
-                            accept=".uvl,.gpx">
-                        <small class="text-muted">Supported formats: UVL, GPX</small>
+                            accept="{% if dataset.dataset_kind == 'uvl' %}.uvl{% elif dataset.dataset_kind == 'gpx' %}.gpx{% else %}.uvl,.gpx{% endif %}">
+                        <small class="text-muted">
+                            Supported formats:
+                            {% if dataset.dataset_kind == 'uvl' %}
+                                UVL only
+                            {% elif dataset.dataset_kind == 'gpx' %}
+                                GPX only
+                            {% else %}
+                                UVL, GPX
+                            {% endif %}
+                        </small>
                     </div>
                 </div>
 

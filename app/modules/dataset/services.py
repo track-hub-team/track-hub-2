@@ -362,6 +362,10 @@ class VersionService:
         Incrementar versión semántica.
         bump_type: 'major', 'minor', 'patch'
         """
+
+        if version_str == "0.0.0":
+            return "1.0.0"
+
         major, minor, patch = map(int, version_str.split("."))
 
         if bump_type == "major":

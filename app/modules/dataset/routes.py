@@ -627,14 +627,35 @@ def edit_dataset(dataset_id):
             try:
                 db.session.commit()
 
-                # ✅ AUTO-VERSIONADO: Crear nueva versión automáticamente
                 if not dataset.ds_meta_data.dataset_doi:  # Solo si NO está sincronizado
                     try:
                         changelog = "Automatic version after edit:\n" + "\n".join(f"- {c}" for c in changes)
 
+                        bump_type = "patch"  # Por defecto
+
+                        # Verificar si hay cambios en archivos (major)
+                        file_changes = [
+                            c for c in changes if "Added file:" in c or "Removed file:" in c or "Modified file:" in c
+                        ]
+                        if file_changes:
+                            bump_type = "major"
+                        else:
+                            # Verificar si hay cambios en título o descripción (minor)
+                            metadata_changes = [
+                                c for c in changes if "title" in c.lower() or "description" in c.lower()
+                            ]
+                            if metadata_changes:
+                                bump_type = "minor"
+                            # Si no, queda en patch (tags, etc.)
+
                         version = VersionService.create_version(
-                            dataset=dataset, changelog=changelog, user=current_user, bump_type="patch"
+                            dataset=dataset, changelog=changelog, user=current_user, bump_type=bump_type
                         )
+
+                        flash(f"Dataset updated successfully! New version: v{version.version_number} 🎉", "success")
+                    except Exception as e:
+                        logger.error(f"Could not create automatic version: {str(e)}")
+                        flash("Dataset updated but version creation failed", "warning")
 
                         flash(f"Dataset updated successfully! New version: v{version.version_number} 🎉", "success")
                     except Exception as e:
