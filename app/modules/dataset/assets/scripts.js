@@ -314,17 +314,32 @@ Dropzone.options.uvlDropzone = {
             }
         });
 
-        dz.on("error", function (file, errorMessage) {
-            console.error("UVL Upload error:", errorMessage);
+        dz.on("error", function (file, errorMessage, xhr) {
+            let message = errorMessage;
+
+            // Si el backend ha devuelto JSON con "message", lo usamos
+            if (xhr && xhr.response) {
+                try {
+                    const data = JSON.parse(xhr.response);
+                    if (data && data.message) {
+                        message = data.message;
+                    }
+                } catch (e) {
+                    // ignorar errores de parseo
+                }
+            }
+
+            console.error("UVL Upload error:", message);
             const alerts = document.getElementById("uvl-alerts");
             if (alerts) {
                 alerts.innerHTML = `<div class="alert alert-danger alert-dismissible fade show">
-                    ${errorMessage}
+                    ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>`;
             }
             dz.removeFile(file);
         });
+
     }
 };
 
@@ -452,12 +467,26 @@ Dropzone.options.gpxDropzone = {
             }
         });
 
-        dz.on("error", function (file, errorMessage) {
-            console.error("GPX Upload error:", errorMessage);
+        dz.on("error", function (file, errorMessage, xhr) {
+            let message = errorMessage;
+
+            // Si el backend ha devuelto JSON con "message", lo usamos
+            if (xhr && xhr.response) {
+                try {
+                    const data = JSON.parse(xhr.response);
+                    if (data && data.message) {
+                        message = data.message;
+                    }
+                } catch (e) {
+                    // ignorar errores de parseo
+                }
+            }
+
+            console.error("GPX Upload error:", message);
             const alerts = document.getElementById("gpx-alerts");
             if (alerts) {
                 alerts.innerHTML = `<div class="alert alert-danger alert-dismissible fade show">
-                    ${errorMessage}
+                    ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>`;
             }
