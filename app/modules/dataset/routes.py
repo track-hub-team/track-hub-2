@@ -24,6 +24,7 @@ from app.modules.dataset.services import (
     VersionService,
     calculate_checksum_and_size,
 )
+from app.modules.recommendation.services import RecommendationService
 from app.modules.zenodo.services import ZenodoService
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ dsmetadata_service = DSMetaDataService()
 zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
+recommendation_service = RecommendationService()
 
 
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
@@ -265,7 +267,16 @@ def subdomain_index(doi):
 
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    # Recomendaciones (módulo recommendation)
+    related = recommendation_service.get_related_datasets(dataset, limit=6)
+
+    resp = make_response(
+        render_template(
+            "dataset/view_dataset.html",
+            dataset=dataset,
+            related_datasets=related,
+        )
+    )
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -281,8 +292,30 @@ def get_unsynchronized_dataset(dataset_id):
     if not dataset:
         abort(404)
 
+    related = recommendation_service.get_related_datasets(dataset, limit=6)
+
     return render_template(
-        "dataset/view_dataset.html", dataset=dataset, FLASK_ENV=os.getenv("FLASK_ENV", "development")
+        "dataset/view_dataset.html",
+        dataset=dataset,
+        related_datasets=related,
+        FLASK_ENV=os.getenv("FLASK_ENV", "development"),
+    )
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/related", methods=["GET"])
+def related_datasets_api(dataset_id):
+    dataset = dataset_service.get_or_404(dataset_id)
+    related = recommendation_service.get_related_datasets(dataset, limit=6)
+    return jsonify(
+        [
+            {
+                "id": d.id,
+                "title": d.ds_meta_data.title,
+                "dataset_doi": d.ds_meta_data.dataset_doi,
+                "kind": d.dataset_kind,
+            }
+            for d in related
+        ]
     )
 
 

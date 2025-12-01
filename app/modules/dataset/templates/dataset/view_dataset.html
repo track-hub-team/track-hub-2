@@ -226,6 +226,33 @@
             </div>
         </div>
 
+        <!-- ========================================= -->
+        <!-- Datasets Relacionados -->
+        <!-- ========================================= -->
+        {% if related_datasets and related_datasets|length > 0 %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Related Datasets</h5>
+                <ul class="list-unstyled mb-0">
+                    {% for r in related_datasets %}
+                    <li class="mb-2">
+                        {% if r.ds_meta_data.dataset_doi %}
+                        <a href="{{ url_for('dataset.subdomain_index', doi=r.ds_meta_data.dataset_doi) }}">
+                            {{ r.ds_meta_data.title }}
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=r.id) }}">
+                            {{ r.ds_meta_data.title }}
+                        </a>
+                        {% endif %}
+                        <small class="text-muted">• {{ r.get_files_count() }} file(s)</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
     <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
