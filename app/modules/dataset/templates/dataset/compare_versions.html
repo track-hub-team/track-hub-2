@@ -132,24 +132,176 @@
                     </div>
                 </div>
 
-                <!-- Resto del contenido igual... -->
+                <!-- ✅ CAMBIOS EN METADATOS -->
                 {% if comparison.metadata_changes %}
-                <!-- ... código existente ... -->
+                <div class="mb-4">
+                    <h4><i data-feather="edit"></i> Metadata Changes</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>v{{ version2.version_number }}</th>
+                                    <th>v{{ version1.version_number }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field, change in comparison.metadata_changes.items() %}
+                                <tr>
+                                    <td><strong>{{ field|title }}</strong></td>
+                                    <td class="text-danger">
+                                        <del>{{ change.old }}</del>
+                                    </td>
+                                    <td class="text-success">
+                                        <ins>{{ change.new }}</ins>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 {% endif %}
 
-                {% if comparison.added_files %}
-                <!-- ... código existente ... -->
+                <!-- ✅ ARCHIVOS AÑADIDOS -->
+                {% if comparison.file_changes.added %}
+                <div class="mb-4">
+                    <h4><i data-feather="file-plus" class="text-success"></i> Added Files</h4>
+                    <ul class="list-group">
+                        {% for filename in comparison.file_changes.added %}
+                        <li class="list-group-item list-group-item-success">
+                            <i data-feather="plus-circle"></i> {{ filename }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% endif %}
 
-                {% if comparison.deleted_files %}
-                <!-- ... código existente ... -->
+                <!-- ✅ ARCHIVOS ELIMINADOS -->
+                {% if comparison.file_changes.removed %}
+                <div class="mb-4">
+                    <h4><i data-feather="file-minus" class="text-danger"></i> Removed Files</h4>
+                    <ul class="list-group">
+                        {% for filename in comparison.file_changes.removed %}
+                        <li class="list-group-item list-group-item-danger">
+                            <i data-feather="minus-circle"></i> {{ filename }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% endif %}
 
-                {% if comparison.changed_files %}
-                <!-- ... código existente ... -->
+                <!-- ✅ ARCHIVOS MODIFICADOS -->
+                {% if comparison.file_changes.modified %}
+                <div class="mb-4">
+                    <h4><i data-feather="edit" class="text-warning"></i> Modified Files</h4>
+                    <ul class="list-group">
+                        {% for filename in comparison.file_changes.modified %}
+                        <li class="list-group-item list-group-item-warning">
+                            <i data-feather="alert-circle"></i> {{ filename }} <span class="badge bg-warning">Changed</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% endif %}
 
-                {% if not comparison.added_files and not comparison.deleted_files and not comparison.changed_files and not comparison.metadata_changes %}
+                <!-- ✅ ESTADÍSTICAS GPX (si aplica) -->
+                {% if comparison.gpx_statistics %}
+                <div class="mb-4">
+                    <h4><i data-feather="activity"></i> GPX Statistics Changes</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>v{{ version2.version_number }}</th>
+                                    <th>v{{ version1.version_number }}</th>
+                                    <th>Difference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if comparison.gpx_statistics.distance %}
+                                <tr>
+                                    <td><strong>Distance</strong></td>
+                                    <td>{{ comparison.gpx_statistics.distance.old }} km</td>
+                                    <td>{{ comparison.gpx_statistics.distance.new }} km</td>
+                                    <td class="{% if comparison.gpx_statistics.distance.diff > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "+" if comparison.gpx_statistics.distance.diff > 0 else "" }}{{ comparison.gpx_statistics.distance.diff }} km
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                {% if comparison.gpx_statistics.elevation_gain %}
+                                <tr>
+                                    <td><strong>Elevation Gain</strong></td>
+                                    <td>{{ comparison.gpx_statistics.elevation_gain.old }} m</td>
+                                    <td>{{ comparison.gpx_statistics.elevation_gain.new }} m</td>
+                                    <td class="{% if comparison.gpx_statistics.elevation_gain.diff > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "+" if comparison.gpx_statistics.elevation_gain.diff > 0 else "" }}{{ comparison.gpx_statistics.elevation_gain.diff }} m
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                {% if comparison.gpx_statistics.tracks %}
+                                <tr>
+                                    <td><strong>Track Count</strong></td>
+                                    <td>{{ comparison.gpx_statistics.tracks.old }}</td>
+                                    <td>{{ comparison.gpx_statistics.tracks.new }}</td>
+                                    <td class="{% if comparison.gpx_statistics.tracks.diff > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "+" if comparison.gpx_statistics.tracks.diff > 0 else "" }}{{ comparison.gpx_statistics.tracks.diff }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ✅ ESTADÍSTICAS UVL (si aplica) -->
+                {% if comparison.uvl_metrics %}
+                <div class="mb-4">
+                    <h4><i data-feather="git-branch"></i> UVL Metrics Changes</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>v{{ version2.version_number }}</th>
+                                    <th>v{{ version1.version_number }}</th>
+                                    <th>Difference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if comparison.uvl_metrics.features %}
+                                <tr>
+                                    <td><strong>Features</strong></td>
+                                    <td>{{ comparison.uvl_metrics.features.old }}</td>
+                                    <td>{{ comparison.uvl_metrics.features.new }}</td>
+                                    <td class="{% if comparison.uvl_metrics.features.diff > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "+" if comparison.uvl_metrics.features.diff > 0 else "" }}{{ comparison.uvl_metrics.features.diff }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                {% if comparison.uvl_metrics.constraints %}
+                                <tr>
+                                    <td><strong>Constraints</strong></td>
+                                    <td>{{ comparison.uvl_metrics.constraints.old }}</td>
+                                    <td>{{ comparison.uvl_metrics.constraints.new }}</td>
+                                    <td class="{% if comparison.uvl_metrics.constraints.diff > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "+" if comparison.uvl_metrics.constraints.diff > 0 else "" }}{{ comparison.uvl_metrics.constraints.diff }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ✅ SIN CAMBIOS -->
+                {% if not comparison.metadata_changes and not comparison.file_changes.added and not comparison.file_changes.removed and not comparison.file_changes.modified and not comparison.gpx_statistics and not comparison.uvl_metrics %}
                 <div class="alert alert-info">
                     <i data-feather="info"></i>
                     No changes detected between these versions.
@@ -172,7 +324,6 @@
         feather.replace();
     });
 
-    // ✅ Función para actualizar comparación
     function updateComparison() {
         const v1 = document.getElementById('version1').value;
         const v2 = document.getElementById('version2').value;
@@ -182,14 +333,12 @@
                 alert('Please select two different versions to compare');
                 return;
             }
-            // Redirigir a la URL de comparación
             window.location.href = `/versions/${v1}/compare/${v2}`;
         } else {
             alert('Please select both versions');
         }
     }
 
-    // ✅ Auto-submit al cambiar versión (opcional)
     document.getElementById('version1').addEventListener('change', function() {
         const v2 = document.getElementById('version2').value;
         if (v2 && this.value !== v2) {

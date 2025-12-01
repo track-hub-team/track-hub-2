@@ -451,22 +451,18 @@ def compare_versions(version1_id, version2_id):
     version1 = DatasetVersion.query.get_or_404(version1_id)
     version2 = DatasetVersion.query.get_or_404(version2_id)
 
-    # Verificar que pertenecen al mismo dataset
     if version1.dataset_id != version2.dataset_id:
         flash("Versions must belong to the same dataset", "danger")
         abort(400)
 
-    # ✅ Obtener el dataset y todas sus versiones ordenadas
     dataset = version1.dataset
     all_versions = (
         DatasetVersion.query.filter_by(dataset_id=dataset.id).order_by(DatasetVersion.created_at.desc()).all()
     )
 
-    # Asegurar orden cronológico (más reciente primero)
     if version1.created_at < version2.created_at:
         version1, version2 = version2, version1
 
-    # Comparar versiones
     comparison = VersionService.compare_versions(version1.id, version2.id)
 
     return render_template(

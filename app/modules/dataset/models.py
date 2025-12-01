@@ -446,7 +446,12 @@ class DatasetVersion(db.Model):
 
         modified = []
         for filename in old_names & new_names:
-            if old_files[filename].get("checksum") != new_files[filename].get("checksum"):
+            old_checksum = old_files[filename].get("checksum")
+            new_checksum = new_files[filename].get("checksum")
+            old_id = old_files[filename].get("id")
+            new_id = new_files[filename].get("id")
+
+            if old_checksum != new_checksum or old_id != new_id:
                 modified.append(filename)
 
         return {"added": added, "removed": removed, "modified": modified}
