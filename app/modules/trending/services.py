@@ -1,12 +1,12 @@
-from app.modules.trending.repositories import TrendingRepository
-from core.services.BaseService import BaseService
-
 from datetime import datetime, timedelta
+
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 
 from app import db
-from app.modules.dataset.models import BaseDataset, DSDownloadRecord, DSViewRecord, DSMetaData
+from app.modules.dataset.models import BaseDataset, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.trending.repositories import TrendingRepository
+from core.services.BaseService import BaseService
 
 
 class TrendingService(BaseService):
