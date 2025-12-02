@@ -1,24 +1,21 @@
+from __future__ import annotations
+
 import hashlib
 import logging
 import os
 import shutil
 import uuid
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
 from typing import Optional
 
 from flask import request
-from sqlalchemy import func
-from sqlalchemy.orm import selectinload
 
 from app import db
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import (
     BaseDataset,
     DatasetVersion,
-    DSDownloadRecord,
     DSMetaData,
-    DSViewRecord,
     GPXDataset,
     GPXDatasetVersion,
     UVLDataset,
@@ -40,6 +37,10 @@ from app.modules.hubfile.repositories import (
 )
 from core.services.BaseService import BaseService
 
+# NOTE: func/selectinload were removed from this file because trending logic
+# was moved to app.modules.trending.services. Keep imports minimal to satisfy linters.
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,8 +54,8 @@ def calculate_checksum_and_size(file_path):
 
 # === Tipos de dataset (validación por extensión) ===
 class DataTypeHandler:
-    ext = None
-    name = None
+    ext: Optional[str] = None
+    name: Optional[str] = None
 
     def validate(self, filepath: str):
         return True
@@ -419,7 +420,7 @@ class DSViewRecordService(BaseService):
     def the_record_exists(self, dataset: BaseDataset, user_cookie: str):
         return self.repository.the_record_exists(dataset, user_cookie)
 
-    def create_new_record(self, dataset: BaseDataset, user_cookie: str) -> DSViewRecord:
+    def create_new_record(self, dataset: BaseDataset, user_cookie: str):
         return self.repository.create_new_record(dataset, user_cookie)
 
     def create_cookie(self, dataset: BaseDataset) -> str:
