@@ -2,7 +2,7 @@ import logging
 
 from flask import render_template
 
-from app.modules.dataset.services import DataSetService
+from app.modules.dataset.services import DataSetService, trending
 from app.modules.featuremodel.services import FeatureModelService
 from app.modules.public import public_bp
 
@@ -36,4 +36,5 @@ def index():
         total_feature_model_downloads=total_feature_model_downloads,
         total_dataset_views=total_dataset_views,
         total_feature_model_views=total_feature_model_views,
+        top3_trending=trending(metric="downloads", period="week", limit=3),
     )
