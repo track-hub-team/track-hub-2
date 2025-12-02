@@ -217,6 +217,108 @@ class ZenodoService(BaseService):
             raise Exception(error_message)
         return response.json()
 
+    def create_new_version(self, deposition_id: int, dataset: BaseDataset, version) -> dict:
+        """
+        Crea una nueva versión de una deposición existente en Zenodo.
+
+        Para Fakenodo: simplemente actualiza los metadatos de la deposición existente.
+        Para Zenodo real: crea una nueva deposición basada en la anterior.
+        """
+        from datetime import datetime
+
+        logger.info(f"Creating new version in Zenodo for deposition {deposition_id}")
+
+        try:
+            is_publication = dataset.ds_meta_data.publication_type.value != "none"
+
+            updated_metadata = {
+                "title": dataset.ds_meta_data.title,
+                "upload_type": "dataset" if not is_publication else "publication",
+                "description": dataset.ds_meta_data.description,
+                "version": version.version_number,
+                "creators": [
+                    {
+                        "name": author.name,
+                        **({"affiliation": author.affiliation} if author.affiliation else {}),
+                        **({"orcid": author.orcid} if author.orcid else {}),
+                    }
+                    for author in dataset.ds_meta_data.authors
+                ],
+                "keywords": (
+                    ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
+                ),
+                "access_right": "open",
+                "license": "CC-BY-4.0",
+            }
+
+            if is_publication:
+                updated_metadata["publication_type"] = dataset.ds_meta_data.publication_type.value
+                updated_metadata["publication_date"] = datetime.utcnow().strftime("%Y-%m-%d")
+
+                if dataset.ds_meta_data.publication_doi:
+                    updated_metadata["related_identifiers"] = [
+                        {
+                            "identifier": dataset.ds_meta_data.publication_doi,
+                            "relation": "isSupplementTo",
+                            "scheme": "doi",
+                        }
+                    ]
+
+            # 1. Actualizar metadatos de la deposición existente
+            metadata_url = f"{self.ZENODO_API_URL}/{deposition_id}"
+
+            metadata_response = requests.put(
+                metadata_url,
+                params=self._params(),
+                json={"metadata": updated_metadata},
+                headers=self.headers,
+                timeout=30,
+            )
+
+            if metadata_response.status_code == 404:
+                logger.warning(f"Deposition {deposition_id} not found in Zenodo/Fakenodo. Skipping sync.")
+                return {"message": "Deposition not found, version created locally only"}
+            elif metadata_response.status_code != 200:
+                logger.error(f"Failed to update metadata: {metadata_response.text}")
+                raise Exception(f"Failed to update metadata: {metadata_response.text}")
+
+            logger.info(f"Metadata updated successfully for deposition {deposition_id}")
+
+            # 2. Subir archivos nuevos (si hay)
+            for feature_model in dataset.feature_models:
+                try:
+                    existing_files = self.get_deposition(deposition_id).get("files", [])
+                    file_exists = any(f.get("filename") == feature_model.fm_meta_data.filename for f in existing_files)
+
+                    if not file_exists:
+                        self.upload_file(dataset, deposition_id, feature_model)
+                        logger.info(f"Uploaded new file: {feature_model.fm_meta_data.filename}")
+                except Exception as e:
+                    logger.warning(f"File upload failed for {feature_model.fm_meta_data.filename}: {e}")
+
+            # 3. Obtener el DOI actual (actualizado con la nueva versión)
+            deposition_data = self.get_deposition(deposition_id)
+            current_doi = deposition_data.get("doi")
+
+            if current_doi:
+                from app.modules.dataset.services import DataSetService
+
+                # Generar nuevo DOI con sufijo de versión
+                base_doi = current_doi.rsplit(".v", 1)[0]
+                new_doi = f"{base_doi}.v{version.version_number.split('.')[0]}"
+
+                DataSetService().update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=new_doi)
+
+                logger.info(f"Version updated successfully. DOI updated to: {new_doi}")
+                return deposition_data
+            else:
+                logger.warning("Could not retrieve DOI from deposition")
+                return deposition_data
+
+        except Exception as e:
+            logger.error(f"Error creating new version in Zenodo: {str(e)}")
+            raise
+
     def upload_file(self, dataset: BaseDataset, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
         """
         Sube un fichero a una deposición existente.
