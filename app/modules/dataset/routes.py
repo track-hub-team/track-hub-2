@@ -291,10 +291,9 @@ def subdomain_index(doi):
     # Check if the DOI is an old DOI
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
-        # Redirect to the same path with the new DOI
         return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
 
-    # Try to search the dataset by the provided DOI (which should already be the new one)
+    # Try to search the dataset by the provided DOI
     ds_meta_data = dsmetadata_service.filter_by_doi(doi)
 
     if not ds_meta_data:
@@ -303,9 +302,50 @@ def subdomain_index(doi):
     # Get dataset
     dataset = ds_meta_data.data_set
 
+    # Sincronizar metadatos desde Zenodo/Fakenodo antes de mostrar
+    if dataset.ds_meta_data.deposition_id:
+        try:
+            logger.info(f"Syncing metadata from Zenodo for dataset {dataset.id}")
+            zenodo_data = zenodo_service.get_deposition(dataset.ds_meta_data.deposition_id)
+
+            if zenodo_data and "metadata" in zenodo_data:
+                metadata = zenodo_data["metadata"]
+
+                # Actualizar título si cambió
+                if metadata.get("title") and metadata["title"] != dataset.ds_meta_data.title:
+                    dataset.ds_meta_data.title = metadata["title"]
+
+                # Actualizar descripción si cambió
+                if metadata.get("description") and metadata["description"] != dataset.ds_meta_data.description:
+                    dataset.ds_meta_data.description = metadata["description"]
+
+                # Actualizar tags si cambiaron
+                if metadata.get("keywords"):
+                    zenodo_tags = [t for t in metadata["keywords"] if t.lower() != "uvlhub"]
+                    new_tags = ", ".join(zenodo_tags)
+                    if new_tags != (dataset.ds_meta_data.tags or ""):
+                        dataset.ds_meta_data.tags = new_tags
+
+                # NO actualizar el DOI desde Zenodo si ya tenemos uno más reciente
+                zenodo_doi = zenodo_data.get("doi")
+                local_doi = dataset.ds_meta_data.dataset_doi
+
+                if zenodo_doi and local_doi:
+                    zenodo_version = int(zenodo_doi.split(".v")[-1]) if ".v" in zenodo_doi else 1
+                    local_version = int(local_doi.split(".v")[-1]) if ".v" in local_doi else 1
+
+                    if zenodo_version > local_version:
+                        dataset.ds_meta_data.dataset_doi = zenodo_doi
+                elif zenodo_doi and not local_doi:
+                    dataset.ds_meta_data.dataset_doi = zenodo_doi
+
+                db.session.commit()
+                logger.info("Metadata synced successfully from Zenodo")
+        except Exception as e:
+            logger.error(f"Failed to sync metadata from Zenodo: {str(e)}")
+
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    # Recomendaciones (módulo recommendation)
     related = recommendation_service.get_related_datasets(dataset, limit=6)
 
     resp = make_response(
@@ -478,31 +518,38 @@ def compare_versions(version1_id, version2_id):
 @dataset_bp.route("/dataset/<int:dataset_id>/create_version", methods=["POST"])
 @login_required
 def create_version(dataset_id):
-    """Crear una nueva versión (solo propietario y datasets NO sincronizados)"""
+    """Crear una nueva versión (solo propietario)"""
     dataset = BaseDataset.query.get_or_404(dataset_id)
 
-    # ✅ Solo el propietario puede crear versiones
     if dataset.user_id != current_user.id:
         abort(403)
-
-    # ✅ NO permitir crear versiones en datasets sincronizados
-    if dataset.ds_meta_data.dataset_doi:
-        flash("Cannot create versions for synchronized datasets. Unsynchronize first.", "warning")
-        return redirect(url_for("dataset.list_versions", dataset_id=dataset_id))
 
     changelog = request.form.get("changelog", "").strip()
     bump_type = request.form.get("bump_type", "patch")
 
     if not changelog:
         flash("Changelog is required", "warning")
-        return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset_id))
+        if dataset.ds_meta_data.dataset_doi:
+            return redirect(url_for("dataset.subdomain_index", doi=dataset.ds_meta_data.dataset_doi))
+        else:
+            return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset_id))
 
     if bump_type not in ["major", "minor", "patch"]:
         bump_type = "patch"
 
     try:
         version = VersionService.create_version(dataset, changelog, current_user, bump_type)
-        flash(f"Version {version.version_number} created successfully! 🎉", "success")
+
+        if dataset.ds_meta_data.dataset_doi and dataset.ds_meta_data.deposition_id:
+            try:
+                zenodo_service.create_new_version(dataset.ds_meta_data.deposition_id, dataset, version)
+                flash(f"Version {version.version_number} created in local and Zenodo! 🎉", "success")
+            except Exception as ze:
+                logger.error(f"Zenodo version creation failed: {str(ze)}")
+                flash(f"Version {version.version_number} created locally, but Zenodo sync failed", "warning")
+        else:
+            flash(f"Version {version.version_number} created successfully! 🎉", "success")
+
     except Exception as e:
         flash(f"Error creating version: {str(e)}", "danger")
         logger.error(f"Error creating version for dataset {dataset_id}: {str(e)}")
@@ -570,7 +617,7 @@ def edit_dataset(dataset_id):
                 file_kind = infer_kind_from_filename(filename)
                 if file_kind != dataset.dataset_kind:
                     flash(
-                        f"File type mismatch: {filename} is {file_kind.upper()} ",
+                        f"File type mismatch: {filename} is {file_kind.upper()} "
                         f"but dataset is {dataset.dataset_kind.upper()}",
                         "danger",
                     )
@@ -594,7 +641,7 @@ def edit_dataset(dataset_id):
                     flash(f"File validation failed for {filename}: {str(e)}", "danger")
                     continue
 
-                # ✅ FIX: Crear FMMetaData con publication_type obligatorio
+                # Crear FMMetaData con publication_type obligatorio
                 from app.modules.featuremodel.repositories import FeatureModelRepository, FMMetaDataRepository
                 from app.modules.hubfile.repositories import HubfileRepository
 
@@ -618,47 +665,46 @@ def edit_dataset(dataset_id):
 
                 changes.append(f"Added file: {filename}")
 
-        # Guardar cambios
+                # Guardar cambios
         if changes:
             try:
                 db.session.commit()
 
-                if not dataset.ds_meta_data.dataset_doi:  # Solo si NO está sincronizado
-                    try:
-                        changelog = "Automatic version after edit:\n" + "\n".join(f"- {c}" for c in changes)
+                # AUTO-VERSIONADO: Crear nueva versión automáticamente (PARA TODOS)
+                try:
+                    changelog = "Automatic version after edit:\n" + "\n".join(f"- {c}" for c in changes)
 
-                        bump_type = "patch"  # Por defecto
+                    # Detectar tipo de cambio automáticamente
+                    bump_type = "patch"
 
-                        # Verificar si hay cambios en archivos (major)
-                        file_changes = [
-                            c for c in changes if "Added file:" in c or "Removed file:" in c or "Modified file:" in c
-                        ]
-                        if file_changes:
-                            bump_type = "major"
-                        else:
-                            # Verificar si hay cambios en título o descripción (minor)
-                            metadata_changes = [
-                                c for c in changes if "title" in c.lower() or "description" in c.lower()
-                            ]
-                            if metadata_changes:
-                                bump_type = "minor"
-                            # Si no, queda en patch (tags, etc.)
+                    file_changes = [
+                        c for c in changes if "Added file:" in c or "Removed file:" in c or "Modified file:" in c
+                    ]
+                    if file_changes:
+                        bump_type = "major"
+                    else:
+                        metadata_changes = [c for c in changes if "title" in c.lower() or "description" in c.lower()]
+                        if metadata_changes:
+                            bump_type = "minor"
 
-                        version = VersionService.create_version(
-                            dataset=dataset, changelog=changelog, user=current_user, bump_type=bump_type
-                        )
+                    version = VersionService.create_version(
+                        dataset=dataset, changelog=changelog, user=current_user, bump_type=bump_type
+                    )
 
+                    # Si está sincronizado con Zenodo, actualizar también allí
+                    if dataset.ds_meta_data.dataset_doi and dataset.ds_meta_data.deposition_id:
+                        try:
+                            zenodo_service.create_new_version(dataset.ds_meta_data.deposition_id, dataset, version)
+                            flash(f"Dataset and Zenodo updated! New version: v{version.version_number} 🎉", "success")
+                        except Exception as ze:
+                            logger.error(f"Zenodo sync failed: {str(ze)}")
+                            flash(f"Dataset updated (v{version.version_number}), but Zenodo sync failed", "warning")
+                    else:
                         flash(f"Dataset updated successfully! New version: v{version.version_number} 🎉", "success")
-                    except Exception as e:
-                        logger.error(f"Could not create automatic version: {str(e)}")
-                        flash("Dataset updated but version creation failed", "warning")
 
-                        flash(f"Dataset updated successfully! New version: v{version.version_number} 🎉", "success")
-                    except Exception as e:
-                        logger.error(f"Could not create automatic version: {str(e)}")
-                        flash("Dataset updated but version creation failed", "warning")
-                else:
-                    flash("Dataset updated successfully! ✅", "success")
+                except Exception as e:
+                    logger.error(f"Could not create automatic version: {str(e)}")
+                    flash("Dataset updated but version creation failed", "warning")
 
                 # Redirigir según tipo
                 if dataset.ds_meta_data.dataset_doi:
