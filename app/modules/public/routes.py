@@ -2,9 +2,10 @@ import logging
 
 from flask import render_template
 
-from app.modules.dataset.services import DataSetService, trending
+from app.modules.dataset.services import DataSetService
 from app.modules.featuremodel.services import FeatureModelService
 from app.modules.public import public_bp
+from app.modules.trending.services import trending
 
 logger = logging.getLogger(__name__)
 
