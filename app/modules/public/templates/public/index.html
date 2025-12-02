@@ -4,6 +4,41 @@
 
 {% block content %}
 
+
+
+
+<div class="card mt-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="h4 mb-0"><b class="text-primary">Top 3 trending this week</b></h2>
+                        <a class="btn btn-sm btn-light"
+                           href="/explore?order=downloads&period=week">See all</a>
+                    </div>
+
+                    {% for item in top3_trending %}
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="text-truncate">
+                                <span class="badge bg-secondary me-2 p-2" style="font-size: 1.2rem;">{{ loop.index }}</span>
+                                
+                                <a href="{{ item.dataset.get_uvlhub_doi() }}" class="text-primary">
+                                    <span class="fs-5 fw-bold">{{ item.dataset.ds_meta_data.title }}</span>
+                                </a>
+                            </div>
+
+                            <div class="text-nowrap ms-3 text-secondary" style="font-size: 1.2rem;">
+                                <i data-feather="download" class="align-middle" style="width: 18px; height: 18px;"></i>
+                                <b>{{ item.downloads }}</b>
+                                {% if item.downloads == 0 and item.views > 0 %}
+                                    <span class="ms-1" style="font-size: 0.9rem">({{ item.views }} views)</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-secondary mb-0">No activity yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
     <h1 class="h2 mb-3">
 
         <b>Latest</b> datasets
@@ -107,25 +142,7 @@
 
 
 
-            <div class="card mt-3">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                    <h2 class="h5 mb-0">Top 3 trending this week</h2>
-                    <a class="btn btn-sm btn-light"
-                        href="/explore?order=downloads&period=week">See all</a>
-                    </div>
-
-                    <ol class="mt-3 mb-0">
-                    {% for item in top3_trending %}
-                        <li>
-                        “{{ item.dataset.ds_meta_data.title }}” — {{ item.downloads }} downloads{% if item.downloads == 0 and item.views > 0 %} ({{ item.views }} views){% endif %}
-                        </li>
-                    {% else %}
-                        <li>No activity yet.</li>
-                    {% endfor %}
-                    </ol>
-                </div>
-            </div>
+            
 
             <a href="/explore" class="btn btn-primary">
                 <i data-feather="search" class="center-button-icon"></i>
