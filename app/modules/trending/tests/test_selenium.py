@@ -1,36 +1,54 @@
 import time
 
-from selenium.common.exceptions import NoSuchElementException
-
-from core.environment.host import get_host_for_selenium_testing
-from core.selenium.common import close_driver, initialize_driver
-
-
-def test_trending_index():
-
-    driver = initialize_driver()
-
-    try:
-        host = get_host_for_selenium_testing()
-
-        # Open the index page
-        driver.get(f"{host}/trending")
-
-        # Wait a little while to make sure the page has loaded completely
-        time.sleep(4)
-
-        try:
-
-            pass
-
-        except NoSuchElementException:
-            raise AssertionError("Test failed!")
-
-    finally:
-
-        # Close the browser
-        close_driver(driver)
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 
-# Call the test function
-test_trending_index()
+class TestDefaultSuite:
+    def setup_method(self, method):
+        options = Options()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+
+        self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+
+        self.driver.implicitly_wait(10)
+
+        self.vars = {}
+
+    def teardown_method(self, method):
+        time.sleep(1)
+        self.driver.quit()
+
+    def test_trendingredirectdataset(self):
+        print("Iniciando test: Redirect Dataset...")
+        self.driver.get("https://track-hub-2-staging.onrender.com/")
+        self.driver.set_window_size(1200, 800)
+
+        time.sleep(1)
+
+        self.driver.find_element(By.LINK_TEXT, "Prueba GPX Zenodo").click()
+        print("Click realizado en 'Prueba GPX Zenodo'")
+
+    def test_trendingbuttonview(self):
+        print("Iniciando test: Button View...")
+        self.driver.get("https://track-hub-2-staging.onrender.com/")
+        self.driver.set_window_size(1200, 800)
+
+        time.sleep(1)
+
+        self.driver.find_element(By.LINK_TEXT, "View").click()
+        print("Click realizado en 'View'")
+
+    def test_trendingseeallbutton(self):
+        print("Iniciando test: See All Button...")
+        self.driver.get("https://track-hub-2-staging.onrender.com/")
+        self.driver.set_window_size(1200, 800)
+
+        time.sleep(1)
+
+        self.driver.find_element(By.LINK_TEXT, "See all").click()
+        print("Click realizado en 'See all'")

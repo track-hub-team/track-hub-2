@@ -22,6 +22,9 @@ def trending(metric: str = "downloads", period: str = "week", limit: int = 10, *
     """
 
     period_days = {"day": 1, "week": 7, "month": 30}.get(period, 7)
+    # Defensive: avoid invalid SQL when limit <= 0
+    if limit <= 0:
+        return []
     now = datetime.utcnow()
     since_period = now - timedelta(days=period_days)
     since_1d = now - timedelta(days=1)
