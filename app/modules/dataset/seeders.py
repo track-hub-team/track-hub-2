@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType
+from app.modules.dataset.models import Author, BaseDataset, DSMetaData, DSMetrics, PublicationType
 from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -57,7 +57,7 @@ class DataSetSeeder(BaseSeeder):
 
         # Create DataSet instances
         datasets = [
-            DataSet(
+            BaseDataset(
                 user_id=user1.id if i % 2 == 0 else user2.id,
                 ds_meta_data_id=seeded_ds_meta_data[i].id,
                 created_at=datetime.now(timezone.utc),
