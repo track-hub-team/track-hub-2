@@ -12,7 +12,7 @@ class VersionService:
     """Servicio para gestionar versiones de datasets"""
 
     def __init__(self):
-        super().__init__(VersioningRepository())
+        self.repository = VersioningRepository()
 
     @staticmethod
     def create_version(dataset: BaseDataset, changelog: str, user, bump_type: str = "patch") -> DatasetVersion:

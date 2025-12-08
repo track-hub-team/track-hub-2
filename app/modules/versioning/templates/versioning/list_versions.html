@@ -85,9 +85,8 @@
                             <!-- Columna derecha: Botones de acción -->
                             <div class="col-md-4 col-12 text-md-end">
                                 {% if not loop.last %}
-                                    <!-- ✅ Botón comparar con versión anterior (AMARILLO en current, AZUL en anteriores) -->
                                     {% set previous_version = versions[loop.index] %}
-                                    <a href="{{ url_for('dataset.compare_versions', version1_id=version.id, version2_id=previous_version.id) }}"
+                                    <a href="{{ url_for('versioning.compare_versions', version1_id=version.id, version2_id=previous_version.id) }}"
                                        class="btn btn-sm {% if loop.first %}btn-warning text-dark{% else %}btn-primary text-white{% endif %} fw-bold shadow-sm"
                                        title="Compare v{{ version.version_number }} with v{{ previous_version.version_number }}">
                                         <i data-feather="git-compare" style="width: 16px; height: 16px;"></i>
