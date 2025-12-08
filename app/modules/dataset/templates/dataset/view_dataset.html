@@ -67,7 +67,7 @@
                     <div class="btn-group" role="group">
                         <!-- Ver historial (todos pueden verlo si tiene versiones) -->
                         {% if dataset.get_version_count() > 0 %}
-                        <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}"
+                        <a href="{{ url_for('versioning.list_versions', dataset_id=dataset.id) }}"
                            class="btn btn-outline-primary btn-sm">
                             <i data-feather="clock"></i> Version History
                         </a>
@@ -334,7 +334,7 @@
 <div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="POST" action="{{ url_for('dataset.create_version', dataset_id=dataset.id) }}">
+            <form method="POST" action="{{ url_for('versioning.create_version', dataset_id=dataset.id) }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="createVersionModalLabel">
                         <i data-feather="git-branch"></i> Create New Version

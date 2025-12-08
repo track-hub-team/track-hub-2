@@ -25,7 +25,7 @@
                 {% endif %}
 
                 <li class="breadcrumb-item">
-                    <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}">Version History</a>
+                    <a href="{{ url_for('versioning.list_versions', dataset_id=dataset.id) }}">Version History</a>
                 </li>
                 <li class="breadcrumb-item active">Compare v{{ version2.version_number }} vs v{{ version1.version_number }}</li>
             </ol>
@@ -300,7 +300,6 @@
                 </div>
                 {% endif %}
 
-                <!-- ✅ SIN CAMBIOS -->
                 {% if not comparison.metadata_changes and not comparison.file_changes.added and not comparison.file_changes.removed and not comparison.file_changes.modified and not comparison.gpx_statistics and not comparison.uvl_metrics %}
                 <div class="alert alert-info">
                     <i data-feather="info"></i>
@@ -309,7 +308,7 @@
                 {% endif %}
 
                 <div class="mt-4">
-                    <a href="{{ url_for('dataset.list_versions', dataset_id=dataset.id) }}" class="btn btn-secondary">
+                    <a href="{{ url_for('versioning.list_versions', dataset_id=dataset.id) }}" class="btn btn-secondary">
                         <i data-feather="arrow-left"></i> Back to Version History
                     </a>
                 </div>

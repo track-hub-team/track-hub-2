@@ -69,7 +69,7 @@
                             </div>
 
                             {% if loop.index > 1 %}
-                            <a href="{{ url_for('dataset.compare_versions', version1_id=versions[loop.index - 1].id, version2_id=version.id) }}"
+                            <a href="{{ url_for('versioning.compare_versions', version1_id=versions[loop.index - 1].id, version2_id=version.id) }}"
                                class="btn btn-sm btn-outline-primary">
                                 <i data-feather="git-compare"></i> Compare with previous
                             </a>
@@ -179,7 +179,7 @@
 <div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="POST" action="{{ url_for('dataset.create_version', dataset_id=dataset.id) }}">
+            <form method="POST" action="{{ url_for('versioning.create_version', dataset_id=dataset.id) }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="createVersionModalLabel">
                         <i data-feather="git-branch"></i> Create New Version
