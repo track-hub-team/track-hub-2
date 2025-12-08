@@ -69,13 +69,13 @@ class DataSetSeeder(BaseSeeder):
         # Assume there are 12 UVL files, create corresponding FMMetaData and FeatureModel
         fm_meta_data_list = [
             FMMetaData(
-                uvl_filename=f"file{i+1}.uvl",
+                filename=f"file{i+1}.uvl",
                 title=f"Feature Model {i+1}",
                 description=f"Description for feature model {i+1}",
                 publication_type=PublicationType.SOFTWARE_DOCUMENTATION,
                 publication_doi=f"10.1234/fm{i+1}",
                 tags="tag1, tag2",
-                uvl_version="1.0",
+                file_version="1.0",
             )
             for i in range(12)
         ]

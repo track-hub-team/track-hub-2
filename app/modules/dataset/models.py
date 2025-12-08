@@ -93,8 +93,8 @@ class BaseDataset(db.Model):
     dataset_kind = db.Column(
         db.String(32),
         nullable=False,
-        default="base",
-        server_default="base",
+        default="uvl",
+        server_default="uvl",
         index=True,
     )
 

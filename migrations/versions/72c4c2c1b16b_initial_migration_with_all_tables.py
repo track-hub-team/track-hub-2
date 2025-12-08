@@ -1,8 +1,8 @@
-"""baseline schema
+"""Initial migration with all tables
 
-Revision ID: d7b09b5319d5
+Revision ID: 72c4c2c1b16b
 Revises:
-Create Date: 2025-11-03 18:23:58.859871
+Create Date: 2025-12-08 18:28:58.327587
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd7b09b5319d5'
+revision = '72c4c2c1b16b'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,6 +34,10 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('solver', sa.Text(), nullable=True),
     sa.Column('not_solver', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('trending',
+    sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user',
@@ -63,23 +67,15 @@ def upgrade():
     )
     op.create_table('fm_meta_data',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('uvl_filename', sa.String(length=120), nullable=False),
+    sa.Column('filename', sa.String(length=120), nullable=False),
     sa.Column('title', sa.String(length=120), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('publication_type', sa.Enum('NONE', 'ANNOTATION_COLLECTION', 'BOOK', 'BOOK_SECTION', 'CONFERENCE_PAPER', 'DATA_MANAGEMENT_PLAN', 'JOURNAL_ARTICLE', 'PATENT', 'PREPRINT', 'PROJECT_DELIVERABLE', 'PROJECT_MILESTONE', 'PROPOSAL', 'REPORT', 'SOFTWARE_DOCUMENTATION', 'TAXONOMIC_TREATMENT', 'TECHNICAL_NOTE', 'THESIS', 'WORKING_PAPER', 'OTHER', name='publicationtype'), nullable=False),
     sa.Column('publication_doi', sa.String(length=120), nullable=True),
     sa.Column('tags', sa.String(length=120), nullable=True),
-    sa.Column('uvl_version', sa.String(length=120), nullable=True),
+    sa.Column('file_version', sa.String(length=120), nullable=True),
     sa.Column('fm_metrics_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['fm_metrics_id'], ['fm_metrics.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('notepad',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('title', sa.String(length=256), nullable=False),
-    sa.Column('body', sa.Text(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user_profile',
@@ -109,8 +105,27 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('ds_meta_data_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('dataset_kind', sa.String(length=32), server_default='base', nullable=False),
     sa.ForeignKeyConstraint(['ds_meta_data_id'], ['ds_meta_data.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('data_set', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_data_set_dataset_kind'), ['dataset_kind'], unique=False)
+
+    op.create_table('dataset_version',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('dataset_id', sa.Integer(), nullable=False),
+    sa.Column('version_number', sa.String(length=20), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('title', sa.String(length=200), nullable=True),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('files_snapshot', sa.JSON(), nullable=True),
+    sa.Column('changelog', sa.Text(), nullable=True),
+    sa.Column('created_by_id', sa.Integer(), nullable=True),
+    sa.Column('version_type', sa.String(length=50), nullable=True),
+    sa.ForeignKeyConstraint(['created_by_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['dataset_id'], ['data_set.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('ds_download_record',
@@ -150,6 +165,24 @@ def upgrade():
     sa.ForeignKeyConstraint(['feature_model_id'], ['feature_model.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('gpx_dataset_version',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('total_distance', sa.Float(), nullable=True),
+    sa.Column('total_elevation_gain', sa.Float(), nullable=True),
+    sa.Column('total_elevation_loss', sa.Float(), nullable=True),
+    sa.Column('total_points', sa.Integer(), nullable=True),
+    sa.Column('track_count', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['id'], ['dataset_version.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('uvl_dataset_version',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('total_features', sa.Integer(), nullable=True),
+    sa.Column('total_constraints', sa.Integer(), nullable=True),
+    sa.Column('model_count', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['id'], ['dataset_version.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('file_download_record',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
@@ -177,18 +210,24 @@ def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('file_view_record')
     op.drop_table('file_download_record')
+    op.drop_table('uvl_dataset_version')
+    op.drop_table('gpx_dataset_version')
     op.drop_table('file')
     op.drop_table('feature_model')
     op.drop_table('ds_view_record')
     op.drop_table('ds_download_record')
+    op.drop_table('dataset_version')
+    with op.batch_alter_table('data_set', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_data_set_dataset_kind'))
+
     op.drop_table('data_set')
     op.drop_table('author')
     op.drop_table('user_profile')
-    op.drop_table('notepad')
     op.drop_table('fm_meta_data')
     op.drop_table('ds_meta_data')
     op.drop_table('zenodo')
     op.drop_table('user')
+    op.drop_table('trending')
     op.drop_table('fm_metrics')
     op.drop_table('ds_metrics')
     op.drop_table('doi_mapping')
