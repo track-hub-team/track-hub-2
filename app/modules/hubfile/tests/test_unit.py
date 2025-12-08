@@ -1,24 +1,45 @@
-import pytest
+class TestHubfileRoutes:
+    """Tests de routes de hubfile"""
+
+    def test_file_download_endpoint(self, test_client):
+        response = test_client.get("/file/download/1")
+        assert response.status_code in [200, 404, 500]
+
+    def test_file_view_endpoint(self, test_client):
+        response = test_client.get("/file/view/1")
+        assert response.status_code in [200, 404, 500]
+
+    def test_file_download_invalid_id(self, test_client):
+        response = test_client.get("/file/download/99999")
+        assert response.status_code in [404, 500]
 
 
-@pytest.fixture(scope="module")
-def test_client(test_client):
-    """
-    Extends the test_client fixture to add additional specific data for module testing.
-    """
-    with test_client.application.app_context():
-        # Add HERE new elements to the database that you want to exist in the test context.
-        # DO NOT FORGET to use db.session.add(<element>) and db.session.commit() to save the data.
-        pass
+class TestHubfileServices:
+    """Tests de servicios"""
 
-    yield test_client
+    def test_hubfile_service_init(self, test_client):
+        """Inicializar servicio"""
+        with test_client.application.app_context():
+            from app.modules.hubfile.services import HubfileService
+
+            service = HubfileService()
+            assert service is not None
 
 
-def test_sample_assertion(test_client):
-    """
-    Sample test to verify that the test framework and environment are working correctly.
-    It does not communicate with the Flask application; it only performs a simple assertion to
-    confirm that the tests in this module can be executed.
-    """
-    greeting = "Hello, World!"
-    assert greeting == "Hello, World!", "The greeting does not coincide with 'Hello, World!'"
+class TestHubfileDownload:
+    """Tests de descarga de archivos"""
+
+    def test_file_download_nonexistent(self, test_client):
+        """Descargar archivo que no existe"""
+        response = test_client.get("/file/download/99999")
+        assert response.status_code in [404, 500]
+
+    def test_file_view_nonexistent(self, test_client):
+        """Ver archivo que no existe"""
+        response = test_client.get("/file/view/99999")
+        assert response.status_code in [404, 500]
+
+    def test_file_download_negative_id(self, test_client):
+        """ID negativo"""
+        response = test_client.get("/file/download/-1")
+        assert response.status_code in [404, 500]

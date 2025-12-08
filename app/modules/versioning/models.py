@@ -40,12 +40,21 @@ class DatasetVersion(db.Model):
 
     def to_dict(self):
         """Serializar a diccionario"""
+        # Obtener el nombre del creador de forma segura
+        created_by_name = None
+        if self.created_by:
+            if hasattr(self.created_by, "profile") and self.created_by.profile:
+                created_by_name = self.created_by.profile.name
+            else:
+                # Fallback al email si no hay profile
+                created_by_name = self.created_by.email
+
         return {
             "id": self.id,
             "version_number": self.version_number,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "changelog": self.changelog,
-            "created_by": self.created_by.profile.name if self.created_by else None,
+            "created_by": created_by_name,
             "title": self.title,
             "description": self.description,
         }
