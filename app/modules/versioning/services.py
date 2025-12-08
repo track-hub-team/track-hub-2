@@ -1,12 +1,12 @@
 import logging
+
+from app import db
 from app.modules.dataset.models import BaseDataset, GPXDataset, UVLDataset
 from app.modules.versioning.models import DatasetVersion, GPXDatasetVersion, UVLDatasetVersion
 from app.modules.versioning.repositories import VersioningRepository
-from core.services.BaseService import BaseService
-from app import db
-
 
 logger = logging.getLogger(__name__)
+
 
 class VersionService:
     """Servicio para gestionar versiones de datasets"""

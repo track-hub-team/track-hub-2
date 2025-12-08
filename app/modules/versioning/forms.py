@@ -3,4 +3,4 @@ from wtforms import SubmitField
 
 
 class VersioningForm(FlaskForm):
-    submit = SubmitField('Save versioning')
+    submit = SubmitField("Save versioning")
