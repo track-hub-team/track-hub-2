@@ -1,0 +1,39 @@
+name: Bug Report
+description: Reportar un error o comportamiento inesperado
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar este bug. Completa la información para que podamos reproducirlo.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: ¿Qué ocurrió?
+      description: Describe el comportamiento incorrecto
+      placeholder: Explica qué pasó y qué esperabas que pasara
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: ¿Cómo podemos reproducir este bug?
+      placeholder: |
+        1. Ir a '...'
+        2. Hacer clic en '...'
+        3. Ver error
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno
+      description: Navegador, SO, versión de Python, etc.
+      placeholder: "Chrome 120, Ubuntu 22.04, Python 3.11"
+    validations:
+      required: false

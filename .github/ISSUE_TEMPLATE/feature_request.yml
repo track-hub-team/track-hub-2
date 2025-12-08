@@ -1,0 +1,38 @@
+name: Feature Request
+description: Proponer una nueva funcionalidad para Track Hub
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por contribuir a Track Hub. Describe la funcionalidad que propones.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción
+      description: Explica claramente la nueva funcionalidad
+      placeholder: ¿Qué problema resuelve? ¿Cómo funcionaría?
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Caso de uso
+      description: Ejemplo de cómo se usaría esta funcionalidad
+      placeholder: "Como [tipo de usuario], quiero [objetivo] para [beneficio]"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true
