@@ -26,20 +26,16 @@ class VersionService:
             user: Usuario que crea la versión
             bump_type: Tipo de incremento ('major', 'minor', 'patch')
         """
-        # Obtener la última versión para incrementar
         last_version = dataset.get_latest_version()
 
         new_version_number = VersionService._increment_version(
-            last_version.version_number if last_version else "0.0.0", bump_type  # Pasar el tipo de incremento
+            last_version.version_number if last_version else "0.0.0", bump_type
         )
 
-        # Crear snapshot de archivos actuales
         files_snapshot = VersionService._create_files_snapshot(dataset)
 
-        # Determinar la clase de versión según tipo de dataset
         version_class = VersionService._get_version_class(dataset)
 
-        # Crear la versión
         version = version_class(
             dataset_id=dataset.id,
             version_number=new_version_number,
@@ -50,7 +46,6 @@ class VersionService:
             created_by_id=user.id,
         )
 
-        # Calcular métricas específicas según tipo
         if isinstance(dataset, GPXDataset):
             version.total_distance = dataset.calculate_total_distance()
             version.total_elevation_gain = dataset.calculate_total_elevation_gain()
@@ -64,10 +59,8 @@ class VersionService:
                 version.total_constraints = dataset.calculate_total_constraints() or 0
 
                 if hasattr(dataset.feature_models, "count"):
-                    # Es una query de SQLAlchemy
                     version.model_count = dataset.feature_models.count()
                 else:
-                    # Es una lista Python
                     version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
 
             except Exception as e:
@@ -116,7 +109,7 @@ class VersionService:
             return f"{major + 1}.0.0"
         elif bump_type == "minor":
             return f"{major}.{minor + 1}.0"
-        else:  # patch
+        else:
             return f"{major}.{minor}.{patch + 1}"
 
     @staticmethod
@@ -128,7 +121,6 @@ class VersionService:
         if version1.dataset_id != version2.dataset_id:
             raise ValueError("Versions must belong to the same dataset")
 
-        # La versión más reciente compara con la más antigua
         if version1.created_at > version2.created_at:
             return version1.compare_with(version2)
         else:

@@ -33,7 +33,6 @@ class RecommendationRepository(BaseRepository):
         if not target:
             return []
 
-        # Autores objetivo (nombre y opcionalmente ORCID)
         target_author_keys = set()
         for a in target.ds_meta_data.authors:
             key = (a.name or "").strip().lower()
@@ -41,7 +40,6 @@ class RecommendationRepository(BaseRepository):
                 key += f"|{a.orcid.strip().lower()}"
             target_author_keys.add(key)
 
-        # Tags objetivo
         target_tags = set([t.strip().lower() for t in (target.ds_meta_data.tags or "").split(",") if t.strip()])
 
         query = self.model.query.join(DSMetaData).outerjoin(Author, Author.ds_meta_data_id == DSMetaData.id)
@@ -59,14 +57,12 @@ class RecommendationRepository(BaseRepository):
         if filters:
             query = query.filter(or_(*filters))
         else:
-            # No hay criterio de relación (sin autores/tags)
             return []
 
         candidates = query.distinct().all()
         if not candidates:
             return []
 
-        # Descargas por dataset para normalizar
         download_counts = {
             r.dataset_id: r.count
             for r in (
@@ -88,15 +84,12 @@ class RecommendationRepository(BaseRepository):
                 if key in target_author_keys or key_orcid in target_author_keys:
                     author_overlap += 1
 
-            # Tags
             tags_ds = set([t.strip().lower() for t in (ds.ds_meta_data.tags or "").split(",") if t.strip()])
             tag_overlap = len(target_tags & tags_ds)
 
-            # Descargas normalizadas
             downloads = download_counts.get(ds.id, 0)
             downloads_score = (downloads / max_downloads) if max_downloads > 0 else 0
 
-            # Recencia
             age_days = (now - ds.created_at).days if ds.created_at else 0
             recency_score = max(0.0, 1 - (age_days / 180))
 

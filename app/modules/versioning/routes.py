@@ -38,7 +38,6 @@ def compare_versions(version1_id, version2_id):
         DatasetVersion.query.filter_by(dataset_id=dataset.id).order_by(DatasetVersion.created_at.desc()).all()
     )
 
-    # Asegurar orden correcto (más reciente primero)
     if version1.created_at < version2.created_at:
         version1, version2 = version2, version1
 
@@ -79,7 +78,6 @@ def create_version(dataset_id):
     try:
         version = VersionService.create_version(dataset, changelog, current_user, bump_type)
 
-        # Sincronizar con Zenodo si está publicado
         if dataset.ds_meta_data.dataset_doi and dataset.ds_meta_data.deposition_id:
             try:
                 zenodo_service.create_new_version(dataset.ds_meta_data.deposition_id, dataset, version)

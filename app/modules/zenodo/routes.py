@@ -48,7 +48,6 @@ def zenodo_demo():
         )
 
     try:
-        # 1) Crear
         meta = {
             "metadata": {
                 "title": "Fakenodo Visual Demo",
@@ -65,14 +64,12 @@ def zenodo_demo():
             success = False
             return jsonify({"success": False, "steps": steps})
 
-        # 2) Mostrar tras crear
         get_url = f"{base}/{dep_id}"
         r = requests.get(get_url, params=params, headers=headers, timeout=30)
         add_step("show_after_create", "GET", get_url, r.status_code, r.json() if r.ok else r.text)
         if not r.ok:
             success = False
 
-        # 3) Subir fichero temporal
         files_url = f"{base}/{dep_id}/files"
         tmpfile = os.path.join(tempfile.gettempdir(), "uvlhub_demo.txt")
         with open(tmpfile, "w") as fh:
@@ -90,7 +87,6 @@ def zenodo_demo():
         if r.status_code != 202:
             success = False
 
-        # 4) Mostrar tras subir
         r = requests.get(get_url, params=params, headers=headers, timeout=30)
         add_step("show_after_upload", "GET", get_url, r.status_code, r.json() if r.ok else r.text)
         if not r.ok:
@@ -99,7 +95,6 @@ def zenodo_demo():
         success = False
         add_step("exception", "?", "n/a", 0, error=str(exc))
     finally:
-        # 5) Eliminar (si se creó)
         if dep_id:
             r = requests.delete(f"{base}/{dep_id}", params=params, timeout=30)
             add_step("delete", "DELETE", f"{base}/{dep_id}", r.status_code, None if r.status_code == 204 else r.text)

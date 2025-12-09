@@ -13,25 +13,19 @@ class DatasetVersion(db.Model):
     version_number = db.Column(db.String(20), nullable=False)  # Formato: "1.0.0"
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Snapshot de metadatos en esta versión
     title = db.Column(db.String(200))
     description = db.Column(db.Text)
 
-    # Snapshot de archivos (JSON: {filename: {checksum, size, id}})
     files_snapshot = db.Column(db.JSON)
 
-    # Mensaje de cambios (changelog)
     changelog = db.Column(db.Text)
 
-    # Usuario que creó esta versión
     created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
-    # Polimorfismo para extensiones específicas
     version_type = db.Column(db.String(50))
 
     __mapper_args__ = {"polymorphic_identity": "base", "polymorphic_on": version_type}
 
-    # Relaciones
     dataset = db.relationship("BaseDataset", back_populates="versions")
     created_by = db.relationship("User", foreign_keys=[created_by_id])
 
@@ -40,13 +34,11 @@ class DatasetVersion(db.Model):
 
     def to_dict(self):
         """Serializar a diccionario"""
-        # Obtener el nombre del creador de forma segura
         created_by_name = None
         if self.created_by:
             if hasattr(self.created_by, "profile") and self.created_by.profile:
                 created_by_name = self.created_by.profile.name
             else:
-                # Fallback al email si no hay profile
                 created_by_name = self.created_by.email
 
         return {
@@ -109,12 +101,11 @@ class GPXDatasetVersion(DatasetVersion):
 
     id = db.Column(db.Integer, db.ForeignKey("dataset_version.id"), primary_key=True)
 
-    # Estadísticas agregadas de todos los tracks
-    total_distance = db.Column(db.Float)  # Distancia total en metros
-    total_elevation_gain = db.Column(db.Float)  # Desnivel positivo total
-    total_elevation_loss = db.Column(db.Float)  # Desnivel negativo total
-    total_points = db.Column(db.Integer)  # Total de puntos GPS
-    track_count = db.Column(db.Integer)  # Número de tracks
+    total_distance = db.Column(db.Float)
+    total_elevation_gain = db.Column(db.Float)
+    total_elevation_loss = db.Column(db.Float)
+    total_points = db.Column(db.Integer)
+    track_count = db.Column(db.Integer)
 
     __mapper_args__ = {"polymorphic_identity": "gpx"}
 
@@ -125,7 +116,6 @@ class GPXDatasetVersion(DatasetVersion):
         if not isinstance(other_version, GPXDatasetVersion):
             return base_comparison
 
-        # Comparar estadísticas GPX
         gpx_changes = {}
 
         if self.total_distance != other_version.total_distance:
@@ -178,7 +168,6 @@ class UVLDatasetVersion(DatasetVersion):
 
     id = db.Column(db.Integer, db.ForeignKey("dataset_version.id"), primary_key=True)
 
-    # Métricas UVL
     total_features = db.Column(db.Integer)
     total_constraints = db.Column(db.Integer)
     model_count = db.Column(db.Integer)

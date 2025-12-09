@@ -32,12 +32,10 @@ class ZenodoService(BaseService):
         Prioriza FAKENODO_URL (fake backend local). Si no existe, usa ZENODO_API_URL
         o los valores por defecto (sandbox en dev, zenodo en prod).
         """
-        # 1) Si hay fakenodo configurado, úsalo
         fakenodo = os.getenv("FAKENODO_URL")
         if fakenodo:
             return fakenodo.rstrip("/")
 
-        # 2) Si no, decide Zenodo por entorno (con override por ZENODO_API_URL si existe)
         FLASK_ENV = os.getenv("FLASK_ENV", "development").lower()
         default = "https://sandbox.zenodo.org/api/deposit/depositions"
         if FLASK_ENV == "production":
@@ -74,7 +72,6 @@ class ZenodoService(BaseService):
         success = True
         messages = []
 
-        # Crear fichero temporal de prueba
         working_dir = os.getenv("WORKING_DIR", "")
         file_path = os.path.join(working_dir, "test_file.txt")
         try:
@@ -84,7 +81,6 @@ class ZenodoService(BaseService):
             logger.exception("Creating local test file failed: %s", exc)
             return jsonify({"success": False, "messages": ["Failed to create local test file."]})
 
-        # 1) Crear deposición
         data = {
             "metadata": {
                 "title": "Test Deposition",
@@ -116,7 +112,6 @@ class ZenodoService(BaseService):
 
         deposition_id = response.json()["id"]
 
-        # 2) Subir fichero
         upload_data = {"name": "test_file.txt"}
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
 
@@ -139,7 +134,6 @@ class ZenodoService(BaseService):
                 messages.append(f"Failed to upload test file. Response code: {response.status_code}")
                 success = False
 
-        # 3) Borrar deposición
         try:
             response = requests.delete(f"{self.ZENODO_API_URL}/{deposition_id}", params=self._params(), timeout=30)
         except Exception as exc:
@@ -147,7 +141,6 @@ class ZenodoService(BaseService):
             messages.append("Failed to delete test deposition (network error).")
             success = False
 
-        # Limpieza del fichero local
         if os.path.exists(file_path):
             os.remove(file_path)
 
@@ -264,7 +257,6 @@ class ZenodoService(BaseService):
                         }
                     ]
 
-            # 1. Actualizar metadatos de la deposición existente
             metadata_url = f"{self.ZENODO_API_URL}/{deposition_id}"
 
             metadata_response = requests.put(
@@ -284,7 +276,6 @@ class ZenodoService(BaseService):
 
             logger.info(f"Metadata updated successfully for deposition {deposition_id}")
 
-            # 2. Subir archivos nuevos (si hay)
             for feature_model in dataset.feature_models:
                 try:
                     existing_files = self.get_deposition(deposition_id).get("files", [])
@@ -296,14 +287,12 @@ class ZenodoService(BaseService):
                 except Exception as e:
                     logger.warning(f"File upload failed for {feature_model.fm_meta_data.filename}: {e}")
 
-            # 3. Obtener el DOI actual (actualizado con la nueva versión)
             deposition_data = self.get_deposition(deposition_id)
             current_doi = deposition_data.get("doi")
 
             if current_doi:
                 from app.modules.dataset.services import DataSetService
 
-                # Generar nuevo DOI con sufijo de versión
                 base_doi = current_doi.rsplit(".v", 1)[0]
                 new_doi = f"{base_doi}.v{version.version_number.split('.')[0]}"
 

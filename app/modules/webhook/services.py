@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 
 from flask import abort
 
-import docker  # type: ignore
+import docker
 from app.modules.webhook.repositories import WebhookRepository
 from core.services.BaseService import BaseService
 
-client = docker.from_env()  # type: ignore
+client = docker.from_env()
 
 
 class WebhookService(BaseService):
