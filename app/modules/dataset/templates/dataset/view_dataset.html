@@ -232,23 +232,57 @@
         {% if related_datasets and related_datasets|length > 0 %}
         <div class="card mt-4">
             <div class="card-body">
-                <h5 class="card-title">Related Datasets</h5>
-                <ul class="list-unstyled mb-0">
+                <h3>Related Datasets</h3>
+                <div class="row g-3 mt-1">
                     {% for r in related_datasets %}
-                    <li class="mb-2">
-                        {% if r.ds_meta_data.dataset_doi %}
-                        <a href="{{ url_for('dataset.subdomain_index', doi=r.ds_meta_data.dataset_doi) }}">
-                            {{ r.ds_meta_data.title }}
-                        </a>
-                        {% else %}
-                        <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=r.id) }}">
-                            {{ r.ds_meta_data.title }}
-                        </a>
-                        {% endif %}
-                        <small class="text-muted">• {{ r.get_files_count() }} file(s)</small>
-                    </li>
+                    <div class="col-md-6 col-12">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <!-- Badge del tipo -->
+                                <div class="mb-2">
+                                    {% if r.dataset_kind == 'uvl' %}
+                                        <span class="badge bg-primary">
+                                            <i data-feather="git-branch"></i> UVL
+                                        </span>
+                                    {% elif r.dataset_kind == 'gpx' %}
+                                        <span class="badge bg-success">
+                                            <i data-feather="map"></i> GPX
+                                        </span>
+                                    {% endif %}
+                                    <span class="badge bg-secondary">
+                                        {{ r.get_cleaned_publication_type() }}
+                                    </span>
+                                </div>
+
+                                <!-- Título del dataset -->
+                                <h5 class="card-title mb-2">
+                                    {% if r.ds_meta_data.dataset_doi %}
+                                    <a href="{{ url_for('dataset.subdomain_index', doi=r.ds_meta_data.dataset_doi) }}" style="text-decoration: none; color: #212529;">
+                                        {{ r.ds_meta_data.title }}
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=r.id) }}" style="text-decoration: none; color: #212529;">
+                                        {{ r.ds_meta_data.title }}
+                                    </a>
+                                    {% endif %}
+                                </h5>
+
+                                <!-- Descripción -->
+                                <p class="card-text text-muted small mb-2">
+                                    {{ r.ds_meta_data.description[:100] }}{% if r.ds_meta_data.description and r.ds_meta_data.description|length > 100 %}...{% endif %}
+                                </p>
+
+                                <!-- Información específica -->
+                                <div class="mb-2 small">
+                                    <i data-feather="file"></i> {{ r.get_files_count() }} file(s)
+                                    <br>
+                                    <i data-feather="download"></i> {{ r.get_file_total_size_for_human() }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
         {% endif %}
