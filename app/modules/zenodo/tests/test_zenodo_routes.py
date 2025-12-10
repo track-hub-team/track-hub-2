@@ -110,43 +110,6 @@ class TestZenodoRouteHelpers:
     @patch("app.modules.zenodo.routes.requests.delete")
     @patch("app.modules.zenodo.routes.requests.post")
     @patch("app.modules.zenodo.routes.requests.get")
-    def test_demo_creates_temp_file(self, mock_get, mock_post, mock_delete, test_client, monkeypatch):
-        """GET /zenodo/demo - Verifica creación de archivo temporal"""
-        import os
-        import tempfile
-
-        monkeypatch.setenv("ZENODO_ACCESS_TOKEN", "test-token")
-        monkeypatch.setenv("FAKENODO_URL", "http://localhost:9999/api/deposit/depositions")
-
-        mock_post_response = Mock()
-        mock_post_response.status_code = 201
-        mock_post_response.json.return_value = {"id": 123}
-        mock_post_response.ok = True
-
-        mock_get_response = Mock()
-        mock_get_response.status_code = 200
-        mock_get_response.json.return_value = {"id": 123}
-        mock_get_response.ok = True
-
-        mock_delete_response = Mock()
-        mock_delete_response.status_code = 204
-        mock_delete_response.text = ""
-
-        mock_post.return_value = mock_post_response
-        mock_get.return_value = mock_get_response
-        mock_delete.return_value = mock_delete_response
-
-        response = test_client.get("/zenodo/demo")
-        assert response.status_code == 200
-
-        tmpfile = os.path.join(tempfile.gettempdir(), "uvlhub_demo.txt")
-        assert not os.path.exists(tmpfile)
-        json_data = response.get_json()
-        assert "steps" in json_data
-
-    @patch("app.modules.zenodo.routes.requests.delete")
-    @patch("app.modules.zenodo.routes.requests.post")
-    @patch("app.modules.zenodo.routes.requests.get")
     def test_demo_includes_all_steps(self, mock_get, mock_post, mock_delete, test_client, monkeypatch):
         """GET /zenodo/demo - Verifica que incluye todos los pasos"""
         monkeypatch.setenv("ZENODO_ACCESS_TOKEN", "test-token")

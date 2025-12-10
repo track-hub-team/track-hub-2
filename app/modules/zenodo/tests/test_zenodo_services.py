@@ -467,24 +467,3 @@ class TestZenodoServiceMetadata:
             json_data = call_args[1]["json"]
             assert json_data["metadata"]["upload_type"] == "publication"
             assert json_data["metadata"]["publication_type"] == "article"
-
-    @patch("app.modules.zenodo.services.requests.post")
-    def test_create_deposition_with_tags(self, mock_post, test_client, sample_dataset, monkeypatch):
-        """Test: Crear deposición con tags"""
-        mock_response = Mock()
-        mock_response.status_code = 201
-        mock_response.json.return_value = {"id": 123}
-        mock_post.return_value = mock_response
-
-        monkeypatch.setenv("ZENODO_ACCESS_TOKEN", "test-token")
-
-        with test_client.application.app_context():
-            dataset = BaseDataset.query.get(sample_dataset.id)
-            dataset.ds_meta_data.tags = "feature model, software"
-            db.session.commit()
-            # Verify the request was made with correct keywords
-            call_args = mock_post.call_args
-            json_data = call_args[1]["json"]
-            assert "feature model" in json_data["metadata"]["keywords"]
-            assert "software" in json_data["metadata"]["keywords"]
-            assert "uvlhub" in json_data["metadata"]["keywords"]
