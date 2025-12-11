@@ -2,10 +2,10 @@
   <img src="https://www.uvlhub.io/static/img/logos/logo-light.png" alt="Logo">
 </div>
 
-# uvlhub.io
+# track-hub-2
 
-Repository of feature models in UVL format integrated with Zenodo and flamapy following Open Science principles - Developed by DiversoLab
+Repository of feature models in GPX format based on uvlhub.io - Developed by DiversoLab - Evolved by track-hub-team
 
 ## Official documentation
 
-You can consult the official documentation of the project at [docs.uvlhub.io](https://docs.uvlhub.io/)
+You can consult the official documentation of the project [here](https://github.com/track-hub-team/track-hub-2/wiki/Documentaci%C3%B3n-EGC)
