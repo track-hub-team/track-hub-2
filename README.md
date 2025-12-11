@@ -4,7 +4,7 @@
 
 # track-hub-2
 
-Repository of feature models in GPX format based on uvlhub.io - Developed by DiversoLab - Evolved by track-hub-team
+Repository of feature models in GPX format based on UVLHUB.IO - Developed by DiversoLab - Evolved by track-hub-team
 
 ## Official documentation
 
