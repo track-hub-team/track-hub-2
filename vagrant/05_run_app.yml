@@ -38,9 +38,20 @@
       shell: |
         source {{ working_dir }}vagrant_venv/bin/activate
         cd {{ working_dir }}
-        nohup flask run --host=0.0.0.0 --port=5000 --reload --debug > app.log 2>&1 &
+        nohup flask run --host=0.0.0.0 --port=5000 --reload --debug > /tmp/flask.log 2>&1 &
       args:
         executable: /bin/bash
       environment: "{{ common_environment }}"
-      async: 1
+      async: 10
+      poll: 0
+
+    - name: Start Fakenodo in background
+      shell: |
+        source {{ working_dir }}vagrant_venv/bin/activate
+        cd {{ working_dir }}app/modules/fakenodo
+        nohup python app.py > /tmp/fakenodo.log 2>&1 &
+      args:
+        executable: /bin/bash
+      environment: "{{ common_environment }}"
+      async: 10
       poll: 0
