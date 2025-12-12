@@ -139,7 +139,7 @@ class DataSetForm(FlaskForm):
         return {
             "title": self.title.data,
             "description": self.desc.data,
-            "publication_type": self.publication_type.data,
+            "publication_type": PublicationType(self.publication_type.data),
             "publication_doi": self.publication_doi.data,
             "dataset_doi": self.dataset_doi.data,
             "tags": self.tags.data,

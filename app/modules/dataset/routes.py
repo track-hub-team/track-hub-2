@@ -52,58 +52,65 @@ def create_dataset():
 
     if request.method == "POST":
         dataset = None
+        temp_folder = current_user.temp_folder()
 
-        if not form.validate_on_submit():
-            return jsonify({"message": form.errors}), 400
-
-        try:
-            logger.info("Creating dataset...")
-            dataset = dataset_service.create_from_form(form=form, current_user=current_user)
-            logger.info(f"Created dataset: {dataset}")
-            dataset_service.move_feature_models(dataset)
-        except Exception as exc:
-            logger.exception(f"Exception while create dataset data in local {exc}")
-            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
-
-        # send dataset as deposition to Zenodo
-        data = {}
-        try:
-            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
-            response_data = json.dumps(zenodo_response_json)
-            data = json.loads(response_data)
-        except Exception as exc:
-            data = {}
-            zenodo_response_json = {}
-            logger.exception(f"Exception while create dataset data in Zenodo {exc}")
-
-        if data.get("conceptrecid"):
-            deposition_id = data.get("id")
-
-            # update dataset with deposition id in Zenodo
-            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+        try:  # ← Añadir try-finally para SIEMPRE limpiar
+            if not form.validate_on_submit():
+                return jsonify({"message": form.errors}), 400
 
             try:
-                # iterate for each feature model (one feature model = one request to Zenodo)
-                for feature_model in dataset.feature_models:
-                    zenodo_service.upload_file(dataset, deposition_id, feature_model)
+                logger.info("Creating dataset...")
+                dataset = dataset_service.create_from_form(form=form, current_user=current_user)
+                logger.info(f"Created dataset: {dataset}")
+                dataset_service.move_feature_models(dataset)
+            except Exception as exc:
+                logger.exception(f"Exception while create dataset data in local {exc}")
+                return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
 
-                # publish deposition
-                zenodo_service.publish_deposition(deposition_id)
+            # send dataset as deposition to Zenodo ONLY if publication_doi is provided
+            data = {}
+            if dataset.ds_meta_data.publication_doi:
+                logger.info(f"Publication DOI provided: {dataset.ds_meta_data.publication_doi}. Syncing to Zenodo...")
+                try:
+                    zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+                    response_data = json.dumps(zenodo_response_json)
+                    data = json.loads(response_data)
+                except Exception as exc:
+                    data = {}
+                    zenodo_response_json = {}
+                    logger.exception(f"Exception while create dataset data in Zenodo {exc}")
 
-                # update DOI
-                deposition_doi = zenodo_service.get_doi(deposition_id)
-                dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
-            except Exception as e:
-                msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
-                return jsonify({"message": msg}), 200
+                if data.get("conceptrecid"):
+                    deposition_id = data.get("id")
 
-        # Delete temp folder
-        file_path = current_user.temp_folder()
-        if os.path.exists(file_path) and os.path.isdir(file_path):
-            shutil.rmtree(file_path)
+                    # update dataset with deposition id in Zenodo
+                    dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
 
-        msg = "Everything works!"
-        return jsonify({"message": msg}), 200
+                    try:
+                        # iterate for each feature model (one feature model = one request to Zenodo)
+                        for feature_model in dataset.feature_models:
+                            zenodo_service.upload_file(dataset, deposition_id, feature_model)
+
+                        # publish deposition
+                        zenodo_service.publish_deposition(deposition_id)
+
+                        # update DOI
+                        deposition_doi = zenodo_service.get_doi(deposition_id)
+                        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                    except Exception as e:
+                        msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
+                        return jsonify({"message": msg}), 200
+            else:
+                logger.info("No publication DOI provided. Dataset created locally only (unsynchronized).")
+
+            msg = "Everything works!"
+            return jsonify({"message": msg}), 200
+
+        finally:
+            # Delete temp folder
+            if os.path.exists(temp_folder) and os.path.isdir(temp_folder):
+                shutil.rmtree(temp_folder)
+                logger.info(f"Cleaned temp folder: {temp_folder}")
 
     return render_template("dataset/upload_dataset.html", form=form)
 
