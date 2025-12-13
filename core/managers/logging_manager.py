@@ -10,16 +10,23 @@ class LoggingManager:
     def setup_logging(self):
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-        # Detect if running in Vagrant
         working_dir = os.environ.get('WORKING_DIR', '')
-        is_vagrant = working_dir == '/vagrant/'
 
-        # Only use file logging outside Vagrant
-        if not is_vagrant:
-            file_handler = RotatingFileHandler("app.log", maxBytes=10240, backupCount=10)
-            file_handler.setLevel(logging.ERROR)
-            file_handler.setFormatter(formatter)
-            self.app.logger.addHandler(file_handler)
+        should_use_file_logging = (
+            working_dir != '/vagrant/' and
+            working_dir != '/app/' and
+            working_dir != ''
+        )
+
+        if should_use_file_logging:
+            try:
+                file_handler = RotatingFileHandler("app.log", maxBytes=10240, backupCount=10)
+                file_handler.setLevel(logging.ERROR)
+                file_handler.setFormatter(formatter)
+                self.app.logger.addHandler(file_handler)
+            except (PermissionError, OSError) as e:
+                # If we can't create the log file, just skip it
+                print(f"Warning: Could not create log file: {e}")
 
         # Console logging
         if self.app.debug:
