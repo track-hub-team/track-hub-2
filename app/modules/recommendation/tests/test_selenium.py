@@ -1,36 +1,34 @@
-import time
-
-from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
 
-def test_recommendation_index():
-
+def test_recommendation200():
+    """
+    Test E2E: abrir dataset 'Sample dataset 8 GPX'.
+    """
     driver = initialize_driver()
 
     try:
         host = get_host_for_selenium_testing()
 
-        # Open the index page
-        driver.get(f"{host}/recommendation")
+        # 1. Ir a la home (equivalente a http://127.0.0.1:5000/)
+        driver.get(f"{host}/")
+        driver.set_window_size(706, 961)
 
-        # Wait a little while to make sure the page has loaded completely
-        time.sleep(4)
+        # 2. Esperar a que el link esté presente y hacer clic
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, "Sample dataset 8 GPX")))
+        driver.find_element(By.LINK_TEXT, "Sample dataset 8 GPX").click()
 
-        try:
+        # 3. (Opcional) Alguna verificación mínima para que el test tenga aserción
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        assert "sample" in driver.page_source.lower()
 
-            pass
-
-        except NoSuchElementException:
-            raise AssertionError("Test failed!")
+        print("✅ Test test_recommendation200 PASSED")
 
     finally:
-
-        # Close the browser
+        # Cerrar el driver con tu helper común
         close_driver(driver)
-
-
-# Call the test function
-test_recommendation_index()
