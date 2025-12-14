@@ -58,9 +58,16 @@ class VersionService:
                 version.total_features = dataset.calculate_total_features() or 0
                 version.total_constraints = dataset.calculate_total_constraints() or 0
 
-                if hasattr(dataset.feature_models, "count"):
-                    version.model_count = dataset.feature_models.count()
+                # Contar modelos correctamente
+                if hasattr(dataset.feature_models, "count") and callable(dataset.feature_models.count):
+                    # Es una query de SQLAlchemy
+                    try:
+                        version.model_count = dataset.feature_models.count()
+                    except TypeError:
+                        # Es una lista, usar len()
+                        version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
                 else:
+                    # Es una lista
                     version.model_count = len(dataset.feature_models) if dataset.feature_models else 0
 
             except Exception as e:

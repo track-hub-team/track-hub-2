@@ -1,3 +1,4 @@
+import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
@@ -6,6 +7,8 @@ from flask import request
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------
@@ -255,23 +258,70 @@ class UVLDataset(BaseDataset):
         return "uvl"
 
     def validate_upload(self, file_path: str) -> bool:
-        # Aquí podrías validar sintaxis UVL, etc.
-        # En el servicio ya haces validación por extensión, esto lo deja listo para mover ahí la lógica si quieres.
         return file_path.lower().endswith(".uvl")
 
     def specific_template(self) -> str | None:
-        # Plantilla parcial específica (si la tienes)
         return "dataset/blocks/uvl_tree.html"
 
     def calculate_total_features(self):
         """Calcular total de features en todos los modelos UVL"""
-        # TODO: Implementar según lógica UVL existente
-        return 0
+        total = 0
+        for fm in self.feature_models:
+            for file in fm.files:
+                if file.name.lower().endswith(".uvl"):
+                    try:
+                        file_path = file.get_path()
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                            in_features_section = False
+
+                            for line in content.split("\n"):
+                                stripped = line.strip()
+
+                                if stripped == "features":
+                                    in_features_section = True
+                                    continue
+
+                                if stripped == "constraints" or (
+                                    in_features_section and stripped and not line.startswith((" ", "\t"))
+                                ):
+                                    in_features_section = False
+
+                                if in_features_section and stripped:
+                                    if stripped not in ["mandatory", "optional", "alternative", "or"]:
+                                        feature_name = stripped.strip('"')
+                                        if feature_name:
+                                            total += 1
+
+                    except Exception as e:
+                        logger.warning(f"Could not parse UVL file {file.name}: {str(e)}")
+        return total
 
     def calculate_total_constraints(self):
         """Calcular total de constraints en todos los modelos UVL"""
-        # TODO: Implementar según lógica UVL existente
-        return 0
+        total = 0
+        for fm in self.feature_models:
+            for file in fm.files:
+                if file.name.lower().endswith(".uvl"):
+                    try:
+                        file_path = file.get_path()
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                            in_constraints_section = False
+
+                            for line in content.split("\n"):
+                                stripped = line.strip()
+
+                                if stripped == "constraints":
+                                    in_constraints_section = True
+                                    continue
+
+                                if in_constraints_section and stripped:
+                                    total += 1
+
+                    except Exception as e:
+                        logger.warning(f"Could not parse UVL file {file.name}: {str(e)}")
+        return total
 
 
 class GPXDataset(BaseDataset):
