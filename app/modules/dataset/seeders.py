@@ -20,8 +20,8 @@ class DataSetSeeder(BaseSeeder):
         # Retrieve users
         user1 = User.query.filter_by(email="user1@example.com").first()
         user2 = User.query.filter_by(email="user2@example.com").first()
-        user3 = User.query.filter_by(email="user3@example.com").first()  # ✅ Nuevo GPX
-        user4 = User.query.filter_by(email="user4@example.com").first()  # ✅ Nuevo GPX
+        user3 = User.query.filter_by(email="user3@example.com").first()
+        user4 = User.query.filter_by(email="user4@example.com").first()
 
         if not user1 or not user2 or not user3 or not user4:
             raise Exception("Users not found. Please seed users first.")
@@ -30,7 +30,7 @@ class DataSetSeeder(BaseSeeder):
         ds_metrics = DSMetrics(number_of_models="5", number_of_features="50")
         seeded_ds_metrics = self.seed([ds_metrics])[0]
 
-        # ✅ Create DSMetaData instances
+        # Create DSMetaData instances
         # 4 UVL (user1 y user2) + 4 GPX (user3 y user4)
         ds_meta_data_list = [
             # User1 - 2 datasets UVL
@@ -75,7 +75,7 @@ class DataSetSeeder(BaseSeeder):
                 tags="tag1, tag2, uvl",
                 ds_metrics_id=seeded_ds_metrics.id,
             ),
-            # ✅ User3 - 2 datasets GPX
+            # User3 - 2 datasets GPX
             DSMetaData(
                 deposition_id=5,
                 title="Sample dataset 5 GPX",
@@ -96,7 +96,7 @@ class DataSetSeeder(BaseSeeder):
                 tags="gpx, gps, tracks",
                 ds_metrics_id=seeded_ds_metrics.id,
             ),
-            # ✅ User4 - 2 datasets GPX
+            # User4 - 2 datasets GPX
             DSMetaData(
                 deposition_id=7,
                 title="Sample dataset 7 GPX",
@@ -120,7 +120,7 @@ class DataSetSeeder(BaseSeeder):
         ]
         seeded_ds_meta_data = self.seed(ds_meta_data_list)
 
-        # ✅ Create Author instances
+        # Create Author instances
         authors = [
             Author(
                 name=f"Author {i+1}",
@@ -132,7 +132,7 @@ class DataSetSeeder(BaseSeeder):
         ]
         self.seed(authors)
 
-        # ✅ Create DataSet instances - SEPARAR POR TIPO
+        # Create DataSet instances - SEPARAR POR TIPO
         # Primero los UVL
         uvl_datasets = [
             # User1 - 2 UVL
@@ -187,22 +187,24 @@ class DataSetSeeder(BaseSeeder):
         ]
         seeded_gpx_datasets = self.seed(gpx_datasets)
 
-        # ✅ Combinar todos los datasets en orden
+        # Combinar todos los datasets en orden
         seeded_datasets = seeded_uvl_datasets + seeded_gpx_datasets
 
-        # ✅ Create version 1.0.0 para todos
+        # Create version 1.0.0 para todos
         versions = [
             DatasetVersion(
                 dataset_id=dataset.id,
                 version_number="1.0.0",
                 changelog="Initial release",
+                created_by_id=dataset.user_id,
+                files_snapshot={},
                 created_at=datetime.now(timezone.utc),
             )
             for dataset in seeded_datasets
         ]
         self.seed(versions)
 
-        # ✅ Create UVL files (solo para los 4 primeros datasets - UVL)
+        # Create UVL files (solo para los 4 primeros datasets - UVL)
         fm_meta_data_list = [
             FMMetaData(
                 filename=f"file{i+1}.uvl",
@@ -263,7 +265,7 @@ class DataSetSeeder(BaseSeeder):
             )
             self.seed([uvl_file])
 
-        # ✅ Create GPX files (para los 4 últimos datasets - GPX)
+        # Create GPX files (para los 4 últimos datasets - GPX)
         for dataset_idx in [4, 5, 6, 7]:  # Índices de datasets GPX
             dataset = seeded_datasets[dataset_idx]
             user_id = dataset.user_id
