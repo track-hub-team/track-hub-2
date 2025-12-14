@@ -32,3 +32,8 @@ def test_recommendation200():
     finally:
         # Cerrar el driver con tu helper común
         close_driver(driver)
+
+
+if __name__ == "__main__":
+    test_recommendation200()
+    print("\n🎉 All versioning Selenium tests passed!")
